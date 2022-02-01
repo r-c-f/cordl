@@ -133,10 +133,12 @@ void input_row(int row, char *dst)
 char *pick_word(void)
 {
 	size_t i;
+	FILE *urandom = fopen("/dev/urandom", "r");
 	do {
-		getentropy(&i, sizeof(i));
+		fread(&i, sizeof(i), 1, urandom);
 		i = i % wordcount;
 	} while (strlen(wordlist[i]) != 5);
+	fclose(urandom);
 	return wordlist[i];
 }
 
