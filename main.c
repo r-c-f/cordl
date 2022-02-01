@@ -37,7 +37,7 @@ void print_status(void)
 	}
 	for (i = 19; i < CHARSET_LEN; ++i) {
 		attron(COLOR_PAIR(char_stat[QWERTY[i] - 'a']));
-		mvaddch(12, (i * 2) - , CHARSET[QWERTY[i] - 'a']);
+		mvaddch(12, (i * 2) - 9, CHARSET[QWERTY[i] - 'a']);
 		attroff(COLOR_PAIR(char_stat[QWERTY[i] - 'a']));
 	}
 	refresh();
@@ -104,6 +104,8 @@ void input_row(int row, char *dst)
 		c = mvgetch(1 + (row * 4), 1 + (pos * 4));
 		switch (c) {
 			case KEY_BACKSPACE:
+			case 127:
+			case '\b':
 				--pos;
 				continue;
 			case '\n':
@@ -206,6 +208,7 @@ int main(int argc, char **argv)
 		char_stat[i] = CELL_BLANK;
 	}
 
+	print_status();
 	char *word = pick_word();
 
 	for (i = 0; i < WORD_LEN; ++i) {
