@@ -11,6 +11,7 @@
 #define CELL_BLANK 3 /* incorrect */
 #define CELL_WRONG 4
 
+#define ROW_COUNT 6
 #define WORD_LEN 5
 #define CHARSET "abcdefghijklmnopqrstuvwxyz"
 #define QWERTY  "qwertyuiopasdfghjklzxcvbnm"
@@ -227,8 +228,8 @@ int main(int argc, char **argv)
 	FILE *words;
 	int i, row, col;
 	char *word;
-	char **rows = calloc(WORD_LEN, sizeof(*rows));
-	for (i = 0; i < WORD_LEN; ++i) {
+	char **rows = calloc(ROW_COUNT, sizeof(*rows));
+	for (i = 0; i < ROW_COUNT; ++i) {
 		rows[i] = calloc(1, WORD_LEN + 1);
 	}
 
@@ -256,7 +257,7 @@ int main(int argc, char **argv)
 		print_status();
 		word = pick_word();
 
-		for (i = 0; i < WORD_LEN; ++i) {
+		for (i = 0; i < ROW_COUNT; ++i) {
 			if (!input_row(i, rows[i]))
 				break;
 			draw_row(i, word, rows[i]);
