@@ -72,10 +72,21 @@ void draw_cell(int color, char c, int x, int y)
 	attroff(COLOR_PAIR(color));
 }
 
+void clear_row(int row)
+{
+	int i;
+	for (i = 0; i < 3; ++i) {
+		move((row * 4) + i, 0);
+		clrtoeol();
+	}
+	print_status();
+	refresh();
+}
 void draw_row(int row, char *word, char *txt)
 {
 	int i;
 	int color;
+	clear_row(row);
 	for (i = 0; i < WORD_LEN; ++i) {
 		if (!word) {
 			draw_cell(CELL_BLANK, ' ', i, row);
@@ -88,7 +99,7 @@ void draw_row(int row, char *word, char *txt)
 				draw_cell(CELL_CHAR, txt[i], i, row);
 			} else {
 				char_stat[txt[i] - 'a'] = CELL_WRONG;
-				draw_cell(CELL_BLANK, txt[i], i, row);
+				draw_cell(CELL_WRONG, txt[i], i, row);
 			}
 		}
 	}
@@ -101,16 +112,28 @@ bool input_row(int row, char *dst)
 	draw_row(row, NULL, NULL);
 	refresh();
 	pos = 0;
+	attron(COLOR_PAIR(CELL_BLANK));
 	while (1) {
+		if (pos > WORD_LEN) {
+			pos = 0;
+			memset(dst, 0, WORD_LEN + 1);
+			print_msg("Word too long");
+			draw_row(row, NULL, NULL);
+			attron(COLOR_PAIR(CELL_BLANK));
+			refresh();
+			continue;
+		}
 		c = mvgetch(1 + (row * 4), 1 + (pos * 4));
 		switch (c) {
 			case KEY_BACKSPACE:
 			case 127:
 			case '\b':
-				--pos;
+				if (pos)
+					--pos;
 				continue;
 			case '\n':
 				if (pos != WORD_LEN) {
+					print_msg("Word too short");
 					continue;
 				} else {
 					if (valid_word(dst)) {
@@ -118,6 +141,8 @@ bool input_row(int row, char *dst)
 					} else {
 						pos = 0;
 						draw_row(row, NULL, NULL);
+						attron(COLOR_PAIR(CELL_BLANK));
+						print_msg("'%s' isn't a word", dst);
 						refresh();
 						continue;
 					}
