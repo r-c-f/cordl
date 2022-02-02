@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,6 +22,17 @@ int char_stat[CHARSET_LEN];
 char **wordlist;
 size_t wordcount;
 
+void print_msg(char *fmt,...)
+{
+	va_list ap;
+	move(24, 0);
+	clrtoeol();
+	move(24, 0);
+	va_start(ap, fmt);
+	vw_printw(stdscr, fmt, ap);
+	va_end(ap);
+	refresh();
+}
 
 void print_status(void)
 {
@@ -210,17 +222,6 @@ char **read_all_lines(FILE *f, char *charset)
         return xreallocarray(line, sizeof(*line), pos + 1);
 }
 
-void print_msg(char *fmt,...)
-{
-	va_list ap;
-	move(24, 0);
-	clrtoeol();
-	move(24, 0);
-	va_start(ap, fmt);
-	vw_printw(stdscr, fmt, ap);
-	va_end(ap);
-	refresh();
-}
 
 
 int main(int argc, char **argv)
