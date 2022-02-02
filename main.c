@@ -3,6 +3,7 @@
 #include <string.h>
 #include <curses.h>
 #include <stdbool.h>
+#include <stdarg.h>
 #include "xmem.h"
 
 #define CELL_CHAR 1 /* contains a valid chacater */
@@ -93,7 +94,7 @@ void draw_row(int row, char *word, char *txt)
 	}
 }
 
-void input_row(int row, char *dst)
+bool input_row(int row, char *dst)
 {
 	int c;
 	int pos;
@@ -113,7 +114,7 @@ void input_row(int row, char *dst)
 					continue;
 				} else {
 					if (valid_word(dst)) {
-						return;
+						return true;
 					} else {
 						pos = 0;
 						draw_row(row, NULL, NULL);
@@ -121,12 +122,15 @@ void input_row(int row, char *dst)
 						continue;
 					}
 				}
+			case 4: // Ctrl+D
+				return false;
 			default:
 				dst[pos] = c;
 				mvaddch(1 + (row * 4), 1 + (pos++ * 4), c);
 				refresh();
 		}
 	}
+	return true;
 }
 
 
@@ -180,11 +184,24 @@ char **read_all_lines(FILE *f, char *charset)
         return xreallocarray(line, sizeof(*line), pos + 1);
 }
 
+void print_msg(char *fmt,...)
+{
+	va_list ap;
+	move(24, 0);
+	clrtoeol();
+	move(24, 0);
+	va_start(ap, fmt);
+	vw_printw(stdscr, fmt, ap);
+	va_end(ap);
+	refresh();
+}
+
 
 int main(int argc, char **argv)
 {
 	FILE *words;
 	int i, row, col;
+	char *word;
 	char **rows = calloc(WORD_LEN, sizeof(*rows));
 	for (i = 0; i < WORD_LEN; ++i) {
 		rows[i] = calloc(1, WORD_LEN + 1);
@@ -206,29 +223,32 @@ int main(int argc, char **argv)
 	wordlist = read_all_lines(words, "abcdefghijklmnopqrstuvwxyz");
 	for (wordcount = 0; wordlist[wordcount]; ++wordcount);
 
-	for (i = 0; i < CHARSET_LEN; ++i) {
-		char_stat[i] = CELL_BLANK;
-	}
-
-	print_status();
-	char *word = pick_word();
-
-	for (i = 0; i < WORD_LEN; ++i) {
-		input_row(i, rows[i]);
-		draw_row(i, word, rows[i]);
-		print_status();
-		refresh();
-		if (!strcmp(rows[i], word)) {
-			return 0;
+	while (1) {
+		for (i = 0; i < CHARSET_LEN; ++i) {
+			char_stat[i] = CELL_BLANK;
 		}
+
+		print_status();
+		word = pick_word();
+
+		for (i = 0; i < WORD_LEN; ++i) {
+			if (!input_row(i, rows[i]))
+				break;
+			draw_row(i, word, rows[i]);
+			print_status();
+			refresh();
+			if (!strcmp(rows[i], word)) {
+				break;
+			}
+		}
+
+		print_msg("Word was: %s\n", word);
+		getch();
+		refresh();
+
+		clear();
 	}
-
-	printf("\n\nWORD WAS: %s\n", word);
-
-	refresh();
-
-	clear();
-	return 1;
+	return 0;
 }
 
 
