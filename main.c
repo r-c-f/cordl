@@ -9,8 +9,8 @@
 
 #define CELL_CHAR 1 /* contains a valid chacater */
 #define CELL_CHARPOS 2 /* contains the valid character in correct pos */
-#define CELL_BLANK 3 /* incorrect */
-#define CELL_WRONG 4
+#define CELL_BLANK 3 /* unused */
+#define CELL_WRONG 4 /* incorrect */
 
 #define ROW_COUNT 6
 #define WORD_LEN 5
@@ -54,7 +54,6 @@ void print_status(void)
 		mvaddch(12, (i * 2) - 9, CHARSET[QWERTY[i] - 'a']);
 		attroff(COLOR_PAIR(char_stat[QWERTY[i] - 'a']));
 	}
-	refresh();
 }
 
 bool valid_word(char *s)
@@ -92,8 +91,6 @@ void clear_row(int row)
 		move((row * 4) + i, 0);
 		clrtoeol();
 	}
-	print_status();
-	refresh();
 }
 void draw_row(int row, char *word, char *txt)
 {
@@ -123,6 +120,7 @@ bool input_row(int row, char *dst)
 	int c;
 	int pos;
 	draw_row(row, NULL, NULL);
+	print_status();
 	refresh();
 	pos = 0;
 	attron(COLOR_PAIR(CELL_BLANK));
@@ -132,6 +130,7 @@ bool input_row(int row, char *dst)
 			memset(dst, 0, WORD_LEN + 1);
 			print_msg("Word too long");
 			draw_row(row, NULL, NULL);
+			print_status();
 			attron(COLOR_PAIR(CELL_BLANK));
 			refresh();
 			continue;
@@ -147,6 +146,7 @@ bool input_row(int row, char *dst)
 			case '\n':
 				if (pos != WORD_LEN) {
 					print_msg("Word too short");
+					refresh();
 					continue;
 				} else {
 					if (valid_word(dst)) {
@@ -154,6 +154,7 @@ bool input_row(int row, char *dst)
 					} else {
 						pos = 0;
 						draw_row(row, NULL, NULL);
+						print_status();
 						attron(COLOR_PAIR(CELL_BLANK));
 						print_msg("'%s' isn't a word", dst);
 						refresh();
@@ -238,8 +239,6 @@ int main(int argc, char **argv)
 	cbreak();
 	noecho();
 
-	refresh();
-
 	start_color();
 	init_pair(CELL_BLANK, 15, 8);
 	init_pair(CELL_WRONG, COLOR_WHITE, 8);
@@ -255,8 +254,8 @@ int main(int argc, char **argv)
 			char_stat[i] = CELL_BLANK;
 		}
 
-		print_status();
 		word = pick_word();
+		print_status();
 
 		for (i = 0; i < ROW_COUNT; ++i) {
 			if (!input_row(i, rows[i]))
@@ -270,10 +269,11 @@ int main(int argc, char **argv)
 		}
 
 		print_msg("Word was: %s\n", word);
-		getch();
 		refresh();
+		getch();
 
 		clear();
+		refresh();
 	}
 	return 0;
 }
