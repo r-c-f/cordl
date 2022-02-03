@@ -34,7 +34,7 @@ void print_msg(char *fmt,...)
 	refresh();
 }
 
-void print_status(void)
+void qwerty_status(void)
 {
 	int i;
 	int color;
@@ -120,7 +120,7 @@ bool input_row(int row, char *dst)
 	int c;
 	int pos;
 	draw_row(row, NULL, NULL);
-	print_status();
+	qwerty_status();
 	refresh();
 	pos = 0;
 	attron(COLOR_PAIR(CELL_BLANK));
@@ -130,7 +130,7 @@ bool input_row(int row, char *dst)
 			memset(dst, 0, WORD_LEN + 1);
 			print_msg("Word too long");
 			draw_row(row, NULL, NULL);
-			print_status();
+			qwerty_status();
 			attron(COLOR_PAIR(CELL_BLANK));
 			refresh();
 			continue;
@@ -154,7 +154,7 @@ bool input_row(int row, char *dst)
 					} else {
 						pos = 0;
 						draw_row(row, NULL, NULL);
-						print_status();
+						qwerty_status();
 						attron(COLOR_PAIR(CELL_BLANK));
 						print_msg("'%s' isn't a word", dst);
 						refresh();
@@ -172,17 +172,6 @@ bool input_row(int row, char *dst)
 	return true;
 }
 
-
-char *pick_word(void)
-{
-	size_t i;
-	FILE *urandom = fopen("/dev/urandom", "r");
-	fread(&i, sizeof(i), 1, urandom);
-	i = i % wordcount;
-	fclose(urandom);
-	return wordlist[i];
-}
-
 bool is_valid_charset_len(char *str, char *charset)
 {
 	int i;
@@ -196,6 +185,7 @@ bool is_valid_charset_len(char *str, char *charset)
 		return false;
 	return true;
 }
+
 char **read_all_lines(FILE *f, char *charset)
 {
         size_t len = 24;
@@ -229,17 +219,36 @@ char **read_all_lines(FILE *f, char *charset)
 
 int main(int argc, char **argv)
 {
-	FILE *words;
+	FILE *words, *urandom;
 	int i, row, col;
-	char *word;
+	size_t word;
 	char **rows = calloc(ROW_COUNT, sizeof(*rows));
 	for (i = 0; i < ROW_COUNT; ++i) {
 		rows[i] = calloc(1, WORD_LEN + 1);
 	}
 
+	if (!(words = fopen("/usr/share/dict/words", "r"))) {
+		perror("fopen wordlist");
+		return 1;
+	}
+	wordlist = read_all_lines(words, "abcdefghijklmnopqrstuvwxyz");
+	fclose(words);
+	for (wordcount = 0; wordlist[wordcount]; ++wordcount);
+
+	if (!(urandom = fopen("/dev/urandom", "r"))) {
+		perror("fopen urandom");
+		return 1;
+	}
+
 	initscr();
 	cbreak();
 	noecho();
+
+	if (!has_colors()) {
+		endwin();
+		fprintf(stderr, "terminal does not support color\n");
+		return 1;
+	}
 
 	start_color();
 	init_pair(CELL_BLANK, 15, 8);
@@ -247,30 +256,29 @@ int main(int argc, char **argv)
 	init_pair(CELL_CHAR, 15, COLOR_YELLOW);
 	init_pair(CELL_CHARPOS, 15, COLOR_GREEN);
 
-	words = fopen("/usr/share/dict/words", "r");
-	wordlist = read_all_lines(words, "abcdefghijklmnopqrstuvwxyz");
-	for (wordcount = 0; wordlist[wordcount]; ++wordcount);
 
 	while (1) {
 		for (i = 0; i < CHARSET_LEN; ++i) {
 			char_stat[i] = CELL_BLANK;
 		}
 
-		word = pick_word();
-		print_status();
+		fread(&word, sizeof(word), 1, urandom);
+		word = word % wordcount;
+
+		qwerty_status();
 
 		for (i = 0; i < ROW_COUNT; ++i) {
 			if (!input_row(i, rows[i]))
 				break;
-			draw_row(i, word, rows[i]);
-			print_status();
+			draw_row(i, wordlist[word], rows[i]);
+			qwerty_status();
 			refresh();
-			if (!strcmp(rows[i], word)) {
+			if (!strcmp(rows[i], wordlist[word])) {
 				break;
 			}
 		}
 
-		print_msg("Word was: %s\n", word);
+		print_msg("Word was: %s\n", wordlist[word]);
 		refresh();
 		getch();
 
