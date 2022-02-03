@@ -84,20 +84,6 @@ void draw_cell(int color, char c, int x, int y)
 	attroff(COLOR_PAIR(color));
 }
 
-void draw_row_sep(int row)
-{
-	int i;
-	if (COLORS >= 16)
-		return;
-
-	for (i = 0; i < WORD_LEN; ++i) {
-		move((row * 4), (i * 4) + 3);
-		vline(0, 3);
-	}
-	move((row * 4) + 3, 0);
-	hline(0, WORD_LEN * 4);
-}
-
 void clear_row(int row)
 {
 	int i;
@@ -105,7 +91,6 @@ void clear_row(int row)
 		move((row * 4) + i, 0);
 		clrtoeol();
 	}
-	draw_row_sep(row);
 }
 void draw_row(int row, char *word, char *txt)
 {
@@ -117,15 +102,14 @@ void draw_row(int row, char *word, char *txt)
 			draw_cell(CELL_BLANK, ' ', i, row);
 		} else {
 			if (txt[i] == word[i]) {
-				char_stat[txt[i] - 'a'] = CELL_CHARPOS;
-				draw_cell(CELL_CHARPOS, txt[i], i, row);
+				color = CELL_CHARPOS;
 			} else if (strchr(word, txt[i])) {
-				char_stat[txt[i] - 'a'] = CELL_CHAR;
-				draw_cell(CELL_CHAR, txt[i], i, row);
+				color = CELL_CHAR;
 			} else {
-				char_stat[txt[i] - 'a'] = CELL_WRONG;
-				draw_cell(CELL_WRONG, txt[i], i, row);
+				color = CELL_WRONG;
 			}
+			char_stat[txt[i] - 'a'] = color;
+			draw_cell(color, txt[i], i, row);
 		}
 	}
 }
@@ -272,8 +256,8 @@ int main(int argc, char **argv)
 		init_pair(CELL_CHAR, 15, COLOR_YELLOW);
 		init_pair(CELL_CHARPOS, 15, COLOR_GREEN);
 	} else {
-		init_pair(CELL_BLANK, COLOR_WHITE, COLOR_BLACK);
-		init_pair(CELL_WRONG, COLOR_WHITE, COLOR_RED);
+		init_pair(CELL_BLANK, COLOR_BLACK, COLOR_WHITE);
+		init_pair(CELL_WRONG, COLOR_WHITE, COLOR_BLACK);
 		init_pair(CELL_CHAR, COLOR_WHITE, COLOR_YELLOW);
 		init_pair(CELL_CHARPOS, COLOR_WHITE, COLOR_GREEN);
 	}
