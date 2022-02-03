@@ -25,9 +25,9 @@ size_t wordcount;
 void print_msg(char *fmt,...)
 {
 	va_list ap;
-	move(24, 0);
+	move(LINES - 1, 0);
 	clrtoeol();
-	move(24, 0);
+	move(LINES - 1, 0);
 	va_start(ap, fmt);
 	vw_printw(stdscr, fmt, ap);
 	va_end(ap);
