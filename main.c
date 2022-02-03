@@ -177,21 +177,23 @@ char *pick_word(void)
 {
 	size_t i;
 	FILE *urandom = fopen("/dev/urandom", "r");
-	do {
-		fread(&i, sizeof(i), 1, urandom);
-		i = i % wordcount;
-	} while (strlen(wordlist[i]) != 5);
+	fread(&i, sizeof(i), 1, urandom);
+	i = i % wordcount;
 	fclose(urandom);
 	return wordlist[i];
 }
 
-bool is_valid_charset(char *str, char *charset)
+bool is_valid_charset_len(char *str, char *charset)
 {
 	int i;
 	for (i = 0; str[i]; ++i) {
+		if (i == WORD_LEN)
+			return false;
 		if (!strchr(charset, str[i]))
 			return false;
 	}
+	if (i != WORD_LEN)
+		return false;
 	return true;
 }
 char **read_all_lines(FILE *f, char *charset)
@@ -214,8 +216,8 @@ char **read_all_lines(FILE *f, char *charset)
                 if ((line_len = getline(line + pos, &n, f)) == -1)
                         break;
                 line[pos][line_len - 1] = '\0'; // strip newline
-                //validate charset
-                if (!is_valid_charset(line[pos], charset)) {
+                //validate charset & length
+                if (!is_valid_charset_len(line[pos], charset)) {
                         --pos; //we'll be redoing this one.
                 }
         }
