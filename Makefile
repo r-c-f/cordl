@@ -1,4 +1,4 @@
-SRC = main.c xmem.h
+SRC = main.c xmem.h sopt.h rnd.h
 
 all: cordl
 

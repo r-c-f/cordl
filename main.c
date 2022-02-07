@@ -5,7 +5,13 @@
 #include <curses.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <unistd.h>
+#include <time.h>
 #include "xmem.h"
+#include "sopt.h"
+
+#define RND_IMPLEMENTATION
+#include "rnd.h"
 
 #define CELL_CHAR 1 /* contains a valid chacater */
 #define CELL_CHARPOS 2 /* contains the valid character in correct pos */
@@ -214,30 +220,63 @@ char **read_all_lines(FILE *f, char *charset)
         return xreallocarray(line, sizeof(*line), pos + 1);
 }
 
-
+struct sopt optspec[] = {
+	SOPT_INIT_ARGL('w', "wordlist", "dict", "List of words (one per line) to use as dictionary"),
+	SOPT_INITL('l', "lowcolor", "Force 8 color mode"),
+	SOPT_INITL('H', "highcolor", "Force 16-color mode"),
+	SOPT_INITL('h', "help", "Help message"),
+	SOPT_INIT_END
+};
 
 int main(int argc, char **argv)
 {
-	FILE *words, *urandom;
-	int i, row, col;
+	/* sopt things*/
+	int opt, cpos = 0, optind = 0;
+	char *optarg = NULL;
+
+	char *dictpath = "/usr/share/dict/words";
+	FILE *words;
+	int i, row, col, color_count = -1;
 	size_t word;
-	char **rows = calloc(ROW_COUNT, sizeof(*rows));
+	char **rows;
+	rnd_pcg_t pcg;
+
+	sopt_usage_set(optspec, argv[0], "wordle-like game for the terminal");
+
+	while ((opt = sopt_getopt(argc, argv, optspec, &cpos, &optind, &optarg)) != -1) {
+		switch (opt) {
+			case 'w':
+				dictpath = optarg;
+				break;
+			case 'l':
+				color_count = 8;
+				break;
+			case 'h':
+				sopt_usage_s();
+				return 0;
+			case 'H': 
+				color_count = 17;
+				break;
+			default:
+				sopt_usage_s();
+				return 1;
+		}
+	}
+
+	rows = calloc(ROW_COUNT, sizeof(*rows));
 	for (i = 0; i < ROW_COUNT; ++i) {
 		rows[i] = calloc(1, WORD_LEN + 1);
 	}
 
-	if (!(words = fopen("/usr/share/dict/words", "r"))) {
+	if (!(words = fopen(dictpath, "r"))) {
 		perror("fopen wordlist");
 		return 1;
 	}
-	wordlist = read_all_lines(words, "abcdefghijklmnopqrstuvwxyz");
+	wordlist = read_all_lines(words, CHARSET);
 	fclose(words);
 	for (wordcount = 0; wordlist[wordcount]; ++wordcount);
 
-	if (!(urandom = fopen("/dev/urandom", "r"))) {
-		perror("fopen urandom");
-		return 1;
-	}
+	rnd_pcg_seed(&pcg, time(NULL) + getpid());
 
 	initscr();
 	cbreak();
@@ -249,8 +288,12 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	if (color_count = -1) {
+		color_count = COLORS;
+	}
+
 	start_color();
-	if (COLORS >= 16) {
+	if (color_count >= 16) {
 		init_pair(CELL_BLANK, 15, 8);
 		init_pair(CELL_WRONG, COLOR_WHITE, 8);
 		init_pair(CELL_CHAR, 15, COLOR_YELLOW);
@@ -267,8 +310,7 @@ int main(int argc, char **argv)
 			char_stat[i] = CELL_BLANK;
 		}
 
-		fread(&word, sizeof(word), 1, urandom);
-		word = word % wordcount;
+		word = rnd_pcg_range(&pcg, 0, wordcount - 1);
 
 		qwerty_status();
 
