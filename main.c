@@ -14,7 +14,7 @@
 #include "rnd.h"
 
 #define CELL_CHAR 1 /* contains a valid chacater */
-#define CELL_CHARPOS 2 /* contains the valid character in correct pos */
+#define CELL_RIGHT 2 /* contains the valid character in correct pos */
 #define CELL_BLANK 3 /* unused */
 #define CELL_WRONG 4 /* incorrect */
 
@@ -108,7 +108,7 @@ void draw_row(int row, char *word, char *txt)
 			draw_cell(CELL_BLANK, ' ', i, row);
 		} else {
 			if (txt[i] == word[i]) {
-				color = CELL_CHARPOS;
+				color = CELL_RIGHT;
 			} else if (strchr(word, txt[i])) {
 				color = CELL_CHAR;
 			} else {
@@ -297,12 +297,12 @@ int main(int argc, char **argv)
 		init_pair(CELL_BLANK, 15, 8);
 		init_pair(CELL_WRONG, COLOR_WHITE, 8);
 		init_pair(CELL_CHAR, 15, COLOR_YELLOW);
-		init_pair(CELL_CHARPOS, 15, COLOR_GREEN);
+		init_pair(CELL_RIGHT, 15, COLOR_GREEN);
 	} else {
 		init_pair(CELL_BLANK, COLOR_BLACK, COLOR_WHITE);
 		init_pair(CELL_WRONG, COLOR_WHITE, COLOR_BLACK);
 		init_pair(CELL_CHAR, COLOR_WHITE, COLOR_YELLOW);
-		init_pair(CELL_CHARPOS, COLOR_WHITE, COLOR_GREEN);
+		init_pair(CELL_RIGHT, COLOR_WHITE, COLOR_GREEN);
 	}
 
 	while (1) {
