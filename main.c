@@ -18,6 +18,8 @@
 #define CELL_BLANK 3 /* unused */
 #define CELL_WRONG 4 /* incorrect */
 
+int cell_attr[5] = {0};
+
 #define ROW_COUNT 6
 #define WORD_LEN 5
 #define CHARSET "abcdefghijklmnopqrstuvwxyz"
@@ -46,19 +48,19 @@ void qwerty_status(void)
 	int color;
 	/* first row */
 	for (i = 0; i < 10; ++i) {
-		attron(COLOR_PAIR(char_stat[QWERTY[i] - 'a']));
+		attron(cell_attr[char_stat[QWERTY[i] - 'a']]);
 		mvaddch(8, 25 + (i * 2), CHARSET[QWERTY[i] - 'a']);
-		attroff(COLOR_PAIR(char_stat[QWERTY[i] - 'a']));
+		attroff(cell_attr[char_stat[QWERTY[i] - 'a']]);
 	}
 	for (i = 10; i < 19; ++i) {
-		attron(COLOR_PAIR(char_stat[QWERTY[i] - 'a']));
+		attron(cell_attr[char_stat[QWERTY[i] - 'a']]);
 		mvaddch(10, 7 + (i * 2), CHARSET[QWERTY[i] - 'a']);
-		attroff(COLOR_PAIR(char_stat[QWERTY[i] - 'a']));
+		attroff(cell_attr[char_stat[QWERTY[i] - 'a']]);
 	}
 	for (i = 19; i < CHARSET_LEN; ++i) {
-		attron(COLOR_PAIR(char_stat[QWERTY[i] - 'a']));
+		attron(cell_attr[char_stat[QWERTY[i] - 'a']]);
 		mvaddch(12, (i * 2) - 9, CHARSET[QWERTY[i] - 'a']);
-		attroff(COLOR_PAIR(char_stat[QWERTY[i] - 'a']));
+		attroff(cell_attr[char_stat[QWERTY[i] - 'a']]);
 	}
 }
 
@@ -75,19 +77,18 @@ bool valid_word(char *s)
 void draw_cell(int color, char c, int x, int y)
 {
 	int i, j;
-	attron(COLOR_PAIR(color));
+	attrset(cell_attr[color] & ~A_UNDERLINE);
 	x *= 4;
 	y *= 4;
 	for (i = 0; i < 3; ++i) {
 		for (j = 0; j < 3; ++j) {
-			if (i == 1 && j == 1) {
-				mvaddch(y + j, x + i, c);
+			if (i == 1 && j == 1 && (~cell_attr[color]) & A_INVIS) {
+				mvaddch(y + j, x + i, c | cell_attr[color]);
 			} else {
 				mvaddch(y + j, x + i, ' ');
 			}
 		}
 	}
-	attroff(COLOR_PAIR(color));
 }
 
 void clear_row(int row)
@@ -128,7 +129,7 @@ bool input_row(int row, char *dst)
 	qwerty_status();
 	refresh();
 	pos = 0;
-	attron(COLOR_PAIR(CELL_BLANK));
+	attron(cell_attr[CELL_BLANK]);
 	while (1) {
 		if (pos > WORD_LEN) {
 			pos = 0;
@@ -136,7 +137,7 @@ bool input_row(int row, char *dst)
 			print_msg("Word too long");
 			draw_row(row, NULL, NULL);
 			qwerty_status();
-			attron(COLOR_PAIR(CELL_BLANK));
+			attron(cell_attr[CELL_BLANK]);
 			refresh();
 			continue;
 		}
@@ -160,7 +161,7 @@ bool input_row(int row, char *dst)
 						pos = 0;
 						draw_row(row, NULL, NULL);
 						qwerty_status();
-						attron(COLOR_PAIR(CELL_BLANK));
+						attron(cell_attr[CELL_BLANK]);
 						print_msg("'%s' isn't a word", dst);
 						refresh();
 						continue;
@@ -222,6 +223,7 @@ char **read_all_lines(FILE *f, char *charset)
 
 struct sopt optspec[] = {
 	SOPT_INIT_ARGL('w', "wordlist", "dict", "List of words (one per line) to use as dictionary"),
+	SOPT_INITL('m', "monochrome", "Force monochrome mode"),
 	SOPT_INITL('l', "lowcolor", "Force 8 color mode"),
 	SOPT_INITL('H', "highcolor", "Force 16-color mode"),
 	SOPT_INITL('h', "help", "Help message"),
@@ -240,6 +242,7 @@ int main(int argc, char **argv)
 	size_t word;
 	char **rows;
 	rnd_pcg_t pcg;
+	bool force_mono = false;
 
 	sopt_usage_set(optspec, argv[0], "wordle-like game for the terminal");
 
@@ -256,6 +259,9 @@ int main(int argc, char **argv)
 				return 0;
 			case 'H': 
 				color_count = 17;
+				break;
+			case 'm':
+				force_mono = true;
 				break;
 			default:
 				sopt_usage_s();
@@ -282,27 +288,32 @@ int main(int argc, char **argv)
 	cbreak();
 	noecho();
 
-	if (!has_colors()) {
-		endwin();
-		fprintf(stderr, "terminal does not support color\n");
-		return 1;
-	}
+	if (has_colors() && !force_mono) {
+		start_color();
+		if (color_count == -1) {
+			color_count = COLORS;
+		}
 
-	if (color_count = -1) {
-		color_count = COLORS;
-	}
-
-	start_color();
-	if (color_count >= 16) {
-		init_pair(CELL_BLANK, 15, 8);
-		init_pair(CELL_WRONG, COLOR_WHITE, 8);
-		init_pair(CELL_CHAR, 15, COLOR_YELLOW);
-		init_pair(CELL_RIGHT, 15, COLOR_GREEN);
+		if (color_count >= 16) {
+			init_pair(CELL_BLANK, 15, 8);
+			init_pair(CELL_WRONG, COLOR_WHITE, 8);
+			init_pair(CELL_CHAR, 15, COLOR_YELLOW);
+			init_pair(CELL_RIGHT, 15, COLOR_GREEN);
+		} else {
+			init_pair(CELL_BLANK, COLOR_BLACK, COLOR_WHITE);
+			init_pair(CELL_WRONG, COLOR_WHITE, COLOR_BLACK);
+			init_pair(CELL_CHAR, COLOR_WHITE, COLOR_YELLOW);
+			init_pair(CELL_RIGHT, COLOR_WHITE, COLOR_GREEN);
+		}
+		cell_attr[CELL_BLANK] = COLOR_PAIR(CELL_BLANK);
+		cell_attr[CELL_WRONG] = COLOR_PAIR(CELL_WRONG);
+		cell_attr[CELL_CHAR] = COLOR_PAIR(CELL_CHAR);
+		cell_attr[CELL_RIGHT] = COLOR_PAIR(CELL_RIGHT);
 	} else {
-		init_pair(CELL_BLANK, COLOR_BLACK, COLOR_WHITE);
-		init_pair(CELL_WRONG, COLOR_WHITE, COLOR_BLACK);
-		init_pair(CELL_CHAR, COLOR_WHITE, COLOR_YELLOW);
-		init_pair(CELL_RIGHT, COLOR_WHITE, COLOR_GREEN);
+		cell_attr[CELL_BLANK] = A_REVERSE;
+		cell_attr[CELL_WRONG] = A_DIM;
+		cell_attr[CELL_CHAR] = A_BOLD;
+		cell_attr[CELL_RIGHT] = A_BOLD | A_UNDERLINE;
 	}
 
 	while (1) {
