@@ -13,12 +13,16 @@
 #define RND_IMPLEMENTATION
 #include "rnd.h"
 
-#define CELL_CHAR 1 /* contains a valid chacater */
-#define CELL_RIGHT 2 /* contains the valid character in correct pos */
-#define CELL_BLANK 3 /* unused */
-#define CELL_WRONG 4 /* incorrect */
 
-int cell_attr[5] = {0};
+enum cell_type {
+	CELL_CHAR = 1,
+	CELL_RIGHT,
+	CELL_BLANK,
+	CELL_WRONG,
+	CELL__COUNT,
+};
+
+int cell_attr[CELL__COUNT] = {0};
 
 #define ROW_COUNT 6
 #define WORD_LEN 5
@@ -74,16 +78,16 @@ bool valid_word(char *s)
 	return false;
 }
 
-void draw_cell(int color, char c, int x, int y)
+void draw_cell(enum cell_type type, char c, int x, int y)
 {
 	int i, j;
-	attrset(cell_attr[color] & ~A_UNDERLINE);
+	attrset(cell_attr[type] & ~A_UNDERLINE);
 	x *= 4;
 	y *= 4;
 	for (i = 0; i < 3; ++i) {
 		for (j = 0; j < 3; ++j) {
-			if (i == 1 && j == 1 && (~cell_attr[color]) & A_INVIS) {
-				mvaddch(y + j, x + i, c | cell_attr[color]);
+			if (i == 1 && j == 1 && (~cell_attr[type]) & A_INVIS) {
+				mvaddch(y + j, x + i, c | cell_attr[type]);
 			} else {
 				mvaddch(y + j, x + i, ' ');
 			}
@@ -102,21 +106,21 @@ void clear_row(int row)
 void draw_row(int row, char *word, char *txt)
 {
 	int i;
-	int color;
+	enum cell_type type;
 	clear_row(row);
 	for (i = 0; i < WORD_LEN; ++i) {
 		if (!word) {
 			draw_cell(CELL_BLANK, ' ', i, row);
 		} else {
 			if (txt[i] == word[i]) {
-				color = CELL_RIGHT;
+				type = CELL_RIGHT;
 			} else if (strchr(word, txt[i])) {
-				color = CELL_CHAR;
+				type = CELL_CHAR;
 			} else {
-				color = CELL_WRONG;
+				type = CELL_WRONG;
 			}
-			char_stat[txt[i] - 'a'] = color;
-			draw_cell(color, txt[i], i, row);
+			char_stat[txt[i] - 'a'] = type;
+			draw_cell(type, txt[i], i, row);
 		}
 	}
 }
@@ -295,9 +299,13 @@ int main(int argc, char **argv)
 		}
 
 		if (color_count >= 16) {
+			//bright white on bright black
 			init_pair(CELL_BLANK, 15, 8);
+			//white on bright black
 			init_pair(CELL_WRONG, COLOR_WHITE, 8);
+			//bright white on yellow
 			init_pair(CELL_CHAR, 15, COLOR_YELLOW);
+			//bright white on green
 			init_pair(CELL_RIGHT, 15, COLOR_GREEN);
 		} else {
 			init_pair(CELL_BLANK, COLOR_BLACK, COLOR_WHITE);
