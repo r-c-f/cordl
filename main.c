@@ -273,9 +273,9 @@ int main(int argc, char **argv)
 		}
 	}
 
-	rows = calloc(ROW_COUNT, sizeof(*rows));
+	rows = xcalloc(ROW_COUNT, sizeof(*rows));
 	for (i = 0; i < ROW_COUNT; ++i) {
-		rows[i] = calloc(1, WORD_LEN + 1);
+		rows[i] = xcalloc(1, WORD_LEN + 1);
 	}
 
 	if (!(words = fopen(dictpath, "r"))) {
