@@ -24,6 +24,26 @@ enum cell_type {
 
 int cell_attr[CELL__COUNT] = {0};
 
+enum fkey {
+	FKEY_HELP = 1,
+	FKEY_NEW,
+	FKEY_QUIT,
+};
+char *fkey_lab[9] = {
+	NULL,
+	"F1  Help",
+	"F2   New",
+	"F3  Quit",
+};
+
+void draw_slk(void)
+{
+	int i;
+	for (i = 1; i < (sizeof(fkey_lab)/sizeof(*fkey_lab)); ++i) {
+		slk_set(i, fkey_lab[i] ? fkey_lab[i] : "", 0);
+	}
+}
+
 #define ROW_COUNT 6
 #define WORD_LEN 5
 #define CHARSET "abcdefghijklmnopqrstuvwxyz"
@@ -171,8 +191,15 @@ bool input_row(int row, char *dst)
 						continue;
 					}
 				}
+			case KEY_F0 + FKEY_NEW:
 			case 4: // Ctrl+D
 				return false;
+			case KEY_F0 + FKEY_QUIT:
+				endwin();
+				exit(0);
+			case KEY_F0 + FKEY_HELP:
+				print_msg("");
+				continue;
 			default:
 				dst[pos] = c;
 				mvaddch(1 + (row * 4), 1 + (pos++ * 4), c);
@@ -261,7 +288,7 @@ int main(int argc, char **argv)
 			case 'h':
 				sopt_usage_s();
 				return 0;
-			case 'H': 
+			case 'H':
 				color_count = 17;
 				break;
 			case 'm':
@@ -288,9 +315,15 @@ int main(int argc, char **argv)
 
 	rnd_pcg_seed(&pcg, time(NULL) + getpid());
 
+	slk_init(1);
+
 	initscr();
 	cbreak();
 	noecho();
+	keypad(stdscr, true);
+
+	draw_slk();
+	slk_refresh();
 
 	if (has_colors() && !force_mono) {
 		start_color();
