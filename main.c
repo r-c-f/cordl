@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -338,6 +339,8 @@ int main(int argc, char **argv)
 
 	rnd_pcg_seed(&pcg, time(NULL) + getpid());
 
+	setlocale(LC_ALL, "");
+
 	slk_init(1);
 
 	initscr();
@@ -379,6 +382,9 @@ int main(int argc, char **argv)
 		cell_attr[CELL_CHAR] = A_BOLD;
 		cell_attr[CELL_RIGHT] = A_BOLD | A_UNDERLINE;
 	}
+
+	print_help();
+	refresh();
 
 	while (1) {
 		for (i = 0; i < CHARSET_LEN; ++i) {
