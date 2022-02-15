@@ -289,6 +289,10 @@ int main(int argc, char **argv)
 	rnd_pcg_t pcg;
 	bool force_mono = false;
 
+	if (!(dictpath = getenv("CORDL_WORDS"))) {
+		dictpath = "/usr/share/dict/words";
+	}
+
 	sopt_usage_set(optspec, argv[0], "wordle-like game for the terminal");
 
 	while ((opt = sopt_getopt(argc, argv, optspec, &cpos, &optind, &optarg)) != -1) {
