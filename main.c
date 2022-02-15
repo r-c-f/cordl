@@ -23,6 +23,7 @@ enum cell_type {
 };
 
 int cell_attr[CELL__COUNT] = {0};
+int color_count = -1;
 
 enum fkey {
 	FKEY_HELP = 1,
@@ -64,6 +65,26 @@ void print_msg(char *fmt,...)
 	vw_printw(stdscr, fmt, ap);
 	va_end(ap);
 	refresh();
+}
+
+#define PRINT_HELP_ATTR(attr, desc) do { \
+	attrset(attr); \
+	addstr("XXX"); \
+	attrset(0); \
+	addstr(desc); \
+} while (0)
+void print_help(void)
+{
+	attr_t oldattr;
+	short oldpair;
+	attr_get(&oldattr, &oldpair, NULL);
+	print_msg("");
+	move(LINES - 1, 0);
+	PRINT_HELP_ATTR(cell_attr[CELL_BLANK], ": unused; ");
+	PRINT_HELP_ATTR(cell_attr[CELL_WRONG], ": wrong; ");
+	PRINT_HELP_ATTR(cell_attr[CELL_CHAR], ": letter in wrong place; ");
+	PRINT_HELP_ATTR(cell_attr[CELL_RIGHT], ": correct");
+	attr_set(oldattr, oldpair, NULL);
 }
 
 void qwerty_status(void)
@@ -198,7 +219,8 @@ bool input_row(int row, char *dst)
 				endwin();
 				exit(0);
 			case KEY_F0 + FKEY_HELP:
-				print_msg("");
+				print_help();
+				refresh();
 				continue;
 			default:
 				dst[pos] = c;
@@ -269,7 +291,7 @@ int main(int argc, char **argv)
 
 	char *dictpath = "/usr/share/dict/words";
 	FILE *words;
-	int i, row, col, color_count = -1;
+	int i, row, col;
 	size_t word;
 	char **rows;
 	rnd_pcg_t pcg;
@@ -348,8 +370,8 @@ int main(int argc, char **argv)
 		}
 		cell_attr[CELL_BLANK] = COLOR_PAIR(CELL_BLANK);
 		cell_attr[CELL_WRONG] = COLOR_PAIR(CELL_WRONG);
-		cell_attr[CELL_CHAR] = COLOR_PAIR(CELL_CHAR);
-		cell_attr[CELL_RIGHT] = COLOR_PAIR(CELL_RIGHT);
+		cell_attr[CELL_CHAR] = COLOR_PAIR(CELL_CHAR) | A_BOLD;
+		cell_attr[CELL_RIGHT] = COLOR_PAIR(CELL_RIGHT) | A_BOLD;
 	} else {
 		cell_attr[CELL_BLANK] = A_REVERSE;
 		cell_attr[CELL_WRONG] = A_DIM;
