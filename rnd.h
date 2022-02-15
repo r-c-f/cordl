@@ -361,9 +361,9 @@ static RND_U32 rnd_internal_murmur3_avalanche32( RND_U32 h )
 static RND_U64 rnd_internal_murmur3_avalanche64( RND_U64 h )
     {
     h ^= h >> 33;
-    h *= 0xff51afd7ed558ccd;
+    h *= 0xff51afd7ed558ccdLL;
     h ^= h >> 33;
-    h *= 0xc4ceb9fe1a85ec53;
+    h *= 0xc4ceb9fe1a85ec53LL;
     h ^= h >> 33;
     return h;
     }
@@ -408,10 +408,11 @@ int rnd_pcg_range( rnd_pcg_t* pcg, int min, int max )
 
 void rnd_well_seed( rnd_well_t* well, RND_U32 seed )
     {
+    int i;
     RND_U32 value = rnd_internal_murmur3_avalanche32( ( seed << 1U ) | 1U );
     well->state[ 16 ] = 0;
     well->state[ 0 ] = value ^ 0xf68a9fc1U;
-    for( int i = 1; i < 16; ++i ) 
+    for( i = 1; i < 16; ++i ) 
         well->state[ i ] = ( 0x6c078965U * ( well->state[ i - 1 ] ^ ( well->state[ i - 1 ] >> 30 ) ) + i ); 
     }
 

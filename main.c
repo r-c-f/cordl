@@ -14,6 +14,10 @@
 #define RND_IMPLEMENTATION
 #include "rnd.h"
 
+#ifdef ANCIENT
+#include "getline.h"
+#endif
+
 
 enum cell_type {
 	CELL_CHAR = 1,
@@ -25,26 +29,6 @@ enum cell_type {
 
 int cell_attr[CELL__COUNT] = {0};
 int color_count = -1;
-
-enum fkey {
-	FKEY_HELP = 1,
-	FKEY_NEW,
-	FKEY_QUIT,
-};
-char *fkey_lab[9] = {
-	NULL,
-	"F1:Help",
-	"F2:New",
-	"F3:Quit",
-};
-
-void draw_slk(void)
-{
-	int i;
-	for (i = 1; i < (sizeof(fkey_lab)/sizeof(*fkey_lab)); ++i) {
-		slk_set(i, fkey_lab[i] ? fkey_lab[i] : "", 0);
-	}
-}
 
 #define ROW_COUNT 6
 #define WORD_LEN 5
@@ -68,11 +52,17 @@ void print_msg(char *fmt,...)
 	refresh();
 }
 
+#define PRINT_HELP_BOLD_DESC(bold, desc) do { \
+	attron(A_BOLD); \
+	addstr(bold); \
+	attroff(A_BOLD); \
+	printw(": %s; ", desc); \
+} while (0)
 #define PRINT_HELP_ATTR(attr, desc) do { \
 	attrset(attr); \
 	addstr("XXX"); \
 	attrset(0); \
-	addstr(desc); \
+	printw(": %s; ", desc); \
 } while (0)
 void print_help(void)
 {
@@ -81,11 +71,15 @@ void print_help(void)
 	attr_get(&oldattr, &oldpair, NULL);
 	print_msg("");
 	move(getmaxy(stdscr) - 1, 0);
-	PRINT_HELP_ATTR(cell_attr[CELL_BLANK], ": unused; ");
-	PRINT_HELP_ATTR(cell_attr[CELL_WRONG], ": wrong; ");
-	PRINT_HELP_ATTR(cell_attr[CELL_CHAR], ": wrong place; ");
-	PRINT_HELP_ATTR(cell_attr[CELL_RIGHT], ": correct; ");
-	addstr("^D: New, ^C: Quit");
+
+	PRINT_HELP_ATTR(cell_attr[CELL_BLANK], "unused");
+	PRINT_HELP_ATTR(cell_attr[CELL_WRONG], "wrong");
+	PRINT_HELP_ATTR(cell_attr[CELL_CHAR], "misplaced");
+	PRINT_HELP_ATTR(cell_attr[CELL_RIGHT], "right");
+	PRINT_HELP_BOLD_DESC("^C", "quit");
+	PRINT_HELP_BOLD_DESC("^D", "new");
+	PRINT_HELP_BOLD_DESC("F1", "help");
+
 	attr_set(oldattr, oldpair, NULL);
 }
 
@@ -214,13 +208,9 @@ bool input_row(int row, char *dst)
 						continue;
 					}
 				}
-			case KEY_F0 + FKEY_NEW:
 			case 4: // Ctrl+D
 				return false;
-			case KEY_F0 + FKEY_QUIT:
-				endwin();
-				exit(0);
-			case KEY_F0 + FKEY_HELP:
+			case KEY_F0 + 1:
 				print_help();
 				refresh();
 				continue;
@@ -341,15 +331,10 @@ int main(int argc, char **argv)
 
 	setlocale(LC_ALL, "");
 
-	slk_init(1);
-
 	initscr();
 	cbreak();
 	noecho();
 	keypad(stdscr, true);
-
-	draw_slk();
-	slk_refresh();
 
 	if (has_colors() && !force_mono) {
 		start_color();
