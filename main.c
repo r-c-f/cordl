@@ -33,9 +33,9 @@ enum fkey {
 };
 char *fkey_lab[9] = {
 	NULL,
-	"F1  Help",
-	"F2   New",
-	"F3  Quit",
+	"F1:Help",
+	"F2:New",
+	"F3:Quit",
 };
 
 void draw_slk(void)
@@ -59,9 +59,9 @@ size_t wordcount;
 void print_msg(char *fmt,...)
 {
 	va_list ap;
-	move(LINES - 1, 0);
+	move(getmaxy(stdscr) - 1, 0);
 	clrtoeol();
-	move(LINES - 1, 0);
+	move(getmaxy(stdscr) - 1, 0);
 	va_start(ap, fmt);
 	vw_printw(stdscr, fmt, ap);
 	va_end(ap);
@@ -80,7 +80,7 @@ void print_help(void)
 	short oldpair;
 	attr_get(&oldattr, &oldpair, NULL);
 	print_msg("");
-	move(LINES - 1, 0);
+	move(getmaxy(stdscr) - 1, 0);
 	PRINT_HELP_ATTR(cell_attr[CELL_BLANK], ": unused; ");
 	PRINT_HELP_ATTR(cell_attr[CELL_WRONG], ": wrong; ");
 	PRINT_HELP_ATTR(cell_attr[CELL_CHAR], ": wrong place; ");
