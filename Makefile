@@ -1,5 +1,8 @@
 SRC = main.c xmem.h sopt.h rnd.h
 
+install: all
+	install -D cordl ${PREFIX}/bin/cordl
+
 all: cordl
 
 clean:
