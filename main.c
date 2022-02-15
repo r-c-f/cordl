@@ -82,8 +82,9 @@ void print_help(void)
 	move(LINES - 1, 0);
 	PRINT_HELP_ATTR(cell_attr[CELL_BLANK], ": unused; ");
 	PRINT_HELP_ATTR(cell_attr[CELL_WRONG], ": wrong; ");
-	PRINT_HELP_ATTR(cell_attr[CELL_CHAR], ": letter in wrong place; ");
-	PRINT_HELP_ATTR(cell_attr[CELL_RIGHT], ": correct");
+	PRINT_HELP_ATTR(cell_attr[CELL_CHAR], ": wrong place; ");
+	PRINT_HELP_ATTR(cell_attr[CELL_RIGHT], ": correct; ");
+	addstr("^D: New, ^C: Quit");
 	attr_set(oldattr, oldpair, NULL);
 }
 
