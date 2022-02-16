@@ -76,7 +76,7 @@ void print_help(void)
 	PRINT_HELP_ATTR(cell_attr[CELL_WRONG], "wrong");
 	PRINT_HELP_ATTR(cell_attr[CELL_CHAR], "misplaced");
 	PRINT_HELP_ATTR(cell_attr[CELL_RIGHT], "right");
-	PRINT_HELP_BOLD_DESC("^C", "quit");
+	PRINT_HELP_BOLD_DESC("Q", "quit");
 	PRINT_HELP_BOLD_DESC("^D", "new");
 	PRINT_HELP_BOLD_DESC("F1", "help");
 
@@ -214,6 +214,9 @@ bool input_row(int row, char *dst)
 				print_help();
 				refresh();
 				continue;
+			case 'Q':
+				endwin();
+				exit(0);
 			default:
 				dst[pos] = c;
 				mvaddch(1 + (row * 4), 1 + (pos++ * 4), c);
