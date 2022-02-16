@@ -10,6 +10,7 @@
 #include <time.h>
 #include "xmem.h"
 #include "sopt.h"
+#include "cursutil.h"
 
 #define RND_IMPLEMENTATION
 #include "rnd.h"
@@ -78,7 +79,7 @@ void print_help(void)
 	PRINT_HELP_ATTR(cell_attr[CELL_RIGHT], "right");
 	PRINT_HELP_BOLD_DESC("^C", "quit");
 	PRINT_HELP_BOLD_DESC("^D", "new");
-	PRINT_HELP_BOLD_DESC("F1", "help");
+	PRINT_HELP_BOLD_DESC("^H", "help");
 
 	attr_set(oldattr, oldpair, NULL);
 }
@@ -185,8 +186,6 @@ bool input_row(int row, char *dst)
 		c = mvgetch(1 + (row * 4), 1 + (pos * 4));
 		switch (c) {
 			case KEY_BACKSPACE:
-			case 127:
-			case '\b':
 				if (pos)
 					--pos;
 				continue;
@@ -208,15 +207,15 @@ bool input_row(int row, char *dst)
 						continue;
 					}
 				}
-			case 4: // Ctrl+D
+			case CTRL_('c'):
+				endwin();
+				exit(0);
+			case CTRL_('d'):
 				return false;
-			case KEY_F0 + 1:
+			case CTRL_('h'):
 				print_help();
 				refresh();
 				continue;
-			case 3: //Ctrl+C
-				endwin();
-				exit(0);
 			default:
 				dst[pos] = c;
 				mvaddch(1 + (row * 4), 1 + (pos++ * 4), c);
@@ -350,14 +349,10 @@ int main(int argc, char **argv)
 		}
 
 		if (color_count >= 16) {
-			//bright white on bright black
-			init_pair(CELL_BLANK, 15, 8);
-			//white on bright black
-			init_pair(CELL_WRONG, COLOR_WHITE, 8);
-			//bright white on yellow
-			init_pair(CELL_CHAR, 15, COLOR_YELLOW);
-			//bright white on green
-			init_pair(CELL_RIGHT, 15, COLOR_GREEN);
+			init_pair(CELL_BLANK, BRIGHT(COLOR_WHITE), BRIGHT(COLOR_BLACK));
+			init_pair(CELL_WRONG, COLOR_WHITE, BRIGHT(COLOR_BLACK));
+			init_pair(CELL_CHAR, BRIGHT(COLOR_WHITE), COLOR_YELLOW);
+			init_pair(CELL_RIGHT, BRIGHT(COLOR_WHITE), COLOR_GREEN);
 		} else {
 			init_pair(CELL_BLANK, COLOR_BLACK, COLOR_WHITE);
 			init_pair(CELL_WRONG, COLOR_WHITE, COLOR_BLACK);
