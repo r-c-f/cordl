@@ -76,7 +76,7 @@ void print_help(void)
 	PRINT_HELP_ATTR(cell_attr[CELL_WRONG], "wrong");
 	PRINT_HELP_ATTR(cell_attr[CELL_CHAR], "misplaced");
 	PRINT_HELP_ATTR(cell_attr[CELL_RIGHT], "right");
-	PRINT_HELP_BOLD_DESC("Q", "quit");
+	PRINT_HELP_BOLD_DESC("^C", "quit");
 	PRINT_HELP_BOLD_DESC("^D", "new");
 	PRINT_HELP_BOLD_DESC("F1", "help");
 
@@ -123,7 +123,7 @@ void draw_cell(enum cell_type type, char c, int x, int y)
 	y *= 4;
 	for (i = 0; i < 3; ++i) {
 		for (j = 0; j < 3; ++j) {
-			if (i == 1 && j == 1 && (~cell_attr[type]) & A_INVIS) {
+			if (i == 1 && j == 1) {
 				mvaddch(y + j, x + i, c | cell_attr[type]);
 			} else {
 				mvaddch(y + j, x + i, ' ');
@@ -214,7 +214,7 @@ bool input_row(int row, char *dst)
 				print_help();
 				refresh();
 				continue;
-			case 'Q':
+			case 3: //Ctrl+C
 				endwin();
 				exit(0);
 			default:
@@ -339,7 +339,7 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 
 	initscr();
-	cbreak();
+	raw();
 	noecho();
 	keypad(stdscr, true);
 
