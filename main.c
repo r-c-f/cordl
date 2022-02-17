@@ -214,6 +214,7 @@ bool input_row(int row, char *dst)
 				return false;
 			default:
 				if (!islower(c)) {
+					beep();
 					print_help();
 					refresh();
 					continue;
