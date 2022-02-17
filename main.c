@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <ctype.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -79,7 +80,6 @@ void print_help(void)
 	PRINT_HELP_ATTR(cell_attr[CELL_RIGHT], "right");
 	PRINT_HELP_BOLD_DESC("^C", "quit");
 	PRINT_HELP_BOLD_DESC("^D", "new");
-	PRINT_HELP_BOLD_DESC("^H", "help");
 
 	attr_set(oldattr, oldpair, NULL);
 }
@@ -185,7 +185,7 @@ bool input_row(int row, char *dst)
 		}
 		c = mvgetch(1 + (row * 4), 1 + (pos * 4));
 		switch (c) {
-			case KEY_BACKSPACE:
+			CASE_ALL_BACKSPACE:
 				if (pos)
 					--pos;
 				continue;
@@ -212,11 +212,12 @@ bool input_row(int row, char *dst)
 				exit(0);
 			case CTRL_('d'):
 				return false;
-			case CTRL_('h'):
-				print_help();
-				refresh();
-				continue;
 			default:
+				if (!islower(c)) {
+					print_help();
+					refresh();
+					continue;
+				}
 				dst[pos] = c;
 				mvaddch(1 + (row * 4), 1 + (pos++ * 4), c);
 				refresh();

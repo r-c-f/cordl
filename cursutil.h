@@ -1,6 +1,6 @@
 /* cursutil -- useful routines for working with curses
  *
- * Version 1.0
+ * Version 1.1
  *
  * Copyright 2022 Ryan Farley <ryan.farley@gmx.com>
  *
@@ -27,3 +27,6 @@
 
 /* Extended color constants (mostly) */
 #define BRIGHT(color) ((color) + 8)
+
+/* Case label for all backspace possibilities */
+#define CASE_ALL_BACKSPACE case KEY_BACKSPACE: case CTRL_('h'): case 127
