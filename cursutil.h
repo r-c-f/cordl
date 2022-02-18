@@ -1,6 +1,6 @@
 /* cursutil -- useful routines for working with curses
  *
- * Version 1.1
+ * Version 1.2
  *
  * Copyright 2022 Ryan Farley <ryan.farley@gmx.com>
  *
@@ -18,6 +18,7 @@
 */
 #pragma once
 #include <curses.h>
+#include <stdarg.h>
 
 /* Clear a border created by box() from a window */
 #define unbox(w) wborder(w, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ')
@@ -30,3 +31,65 @@
 
 /* Case label for all backspace possibilities */
 #define CASE_ALL_BACKSPACE case KEY_BACKSPACE: case CTRL_('h'): case 127
+
+/* move and vwprintw */
+static void vmvwprintw(WINDOW *w, int y, int x,  const char *fmt, va_list args)
+{
+	wmove(w, y, x);
+       	vwprintw(w, fmt, args);
+}
+
+/* an optional status line window */
+static WINDOW *cu_stat_win;
+/* helper for status line initialization */
+static int cu_stat_init_(WINDOW *w, int cols)
+{
+	cu_stat_win = w;
+	return OK;
+}
+/* initialize status line BEFORE INITSCR() */
+enum cu_stat_pos {
+	CU_STAT_BOTTOM = -1,
+	CU_STAT_TOP = 1,
+};
+static int cu_stat_init(enum cu_stat_pos pos)
+{
+	return ripoffline(pos, cu_stat_init_);
+}
+
+/* pretty self-explanatory status line macros/functions */
+#define cu_stat_clear() wclear(cu_stat_win)
+#define cu_stat_move(y, x) wmove(cu_stat_win, y, x)
+/* printw for status line, but set attributes */
+static void cu_stat_aprintw(int attr, char *fmt, ...)
+{
+	va_list ap;
+	attr_t oldattr;
+	short oldpair;
+
+	if (attr != -1) {
+		wattr_get(cu_stat_win, &oldattr, &oldpair, NULL);
+		wattrset(cu_stat_win, attr);
+	}
+	va_start(ap, fmt);
+	vwprintw(cu_stat_win, fmt, ap);
+	va_end(ap);
+
+	if (attr != -1) {
+		wattr_set(cu_stat_win, oldattr, oldpair, NULL);
+	}
+	wnoutrefresh(cu_stat_win);
+}
+
+/* print an entirely new message to the status line */
+static void cu_stat_setw(char *fmt, ...)
+{
+	va_list ap;
+
+	cu_stat_clear();
+	va_start(ap, fmt);
+	vmvwprintw(cu_stat_win, 0, 0, fmt, ap);
+	va_end(ap);
+
+	wnoutrefresh(cu_stat_win);
+}

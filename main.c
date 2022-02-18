@@ -42,46 +42,24 @@ int char_stat[CHARSET_LEN];
 char **wordlist;
 size_t wordcount;
 
-void print_msg(char *fmt,...)
-{
-	va_list ap;
-	move(getmaxy(stdscr) - 1, 0);
-	clrtoeol();
-	move(getmaxy(stdscr) - 1, 0);
-	va_start(ap, fmt);
-	vw_printw(stdscr, fmt, ap);
-	va_end(ap);
-	refresh();
-}
-
 #define PRINT_HELP_BOLD_DESC(bold, desc) do { \
-	attron(A_BOLD); \
-	addstr(bold); \
-	attroff(A_BOLD); \
-	printw(": %s; ", desc); \
+	cu_stat_aprintw(A_BOLD, "%s", bold); \
+	cu_stat_aprintw(A_NORMAL, ": %s; ", desc); \
 } while (0)
-#define PRINT_HELP_ATTR(attr, desc) do { \
-	attrset(attr); \
-	addstr("XXX"); \
-	attrset(0); \
-	printw(": %s; ", desc); \
+#define PRINT_HELP_CELL(cell, desc) do { \
+	cu_stat_aprintw(cell_attr[cell], "XXX"); \
+	cu_stat_aprintw(A_NORMAL, ": %s; ", desc); \
 } while (0)
 void print_help(void)
 {
-	attr_t oldattr;
-	short oldpair;
-	attr_get(&oldattr, &oldpair, NULL);
-	print_msg("");
-	move(getmaxy(stdscr) - 1, 0);
-
-	PRINT_HELP_ATTR(cell_attr[CELL_BLANK], "unused");
-	PRINT_HELP_ATTR(cell_attr[CELL_WRONG], "wrong");
-	PRINT_HELP_ATTR(cell_attr[CELL_CHAR], "misplaced");
-	PRINT_HELP_ATTR(cell_attr[CELL_RIGHT], "right");
+	cu_stat_clear();
+	PRINT_HELP_CELL(CELL_BLANK, "unused");
+	PRINT_HELP_CELL(CELL_WRONG, "wrong");
+	PRINT_HELP_CELL(CELL_CHAR, "misplaced");
+	PRINT_HELP_CELL(CELL_RIGHT, "right");
 	PRINT_HELP_BOLD_DESC("^C", "quit");
 	PRINT_HELP_BOLD_DESC("^D", "new");
-
-	attr_set(oldattr, oldpair, NULL);
+	refresh();
 }
 
 void qwerty_status(void)
@@ -176,7 +154,7 @@ bool input_row(int row, char *dst)
 		if (pos > WORD_LEN) {
 			pos = 0;
 			memset(dst, 0, WORD_LEN + 1);
-			print_msg("Word too long");
+			cu_stat_setw("Word too long");
 			draw_row(row, NULL, NULL);
 			qwerty_status();
 			attron(cell_attr[CELL_BLANK]);
@@ -191,7 +169,7 @@ bool input_row(int row, char *dst)
 				continue;
 			case '\n':
 				if (pos != WORD_LEN) {
-					print_msg("Word too short");
+					cu_stat_setw("Word too short");
 					refresh();
 					continue;
 				} else {
@@ -202,7 +180,7 @@ bool input_row(int row, char *dst)
 						draw_row(row, NULL, NULL);
 						qwerty_status();
 						attron(cell_attr[CELL_BLANK]);
-						print_msg("'%s' isn't a word", dst);
+						cu_stat_setw("'%s' isn't a word", dst);
 						refresh();
 						continue;
 					}
@@ -339,6 +317,7 @@ int main(int argc, char **argv)
 
 	setlocale(LC_ALL, "");
 
+	cu_stat_init(CU_STAT_BOTTOM);
 	initscr();
 	raw();
 	noecho();
@@ -395,7 +374,7 @@ int main(int argc, char **argv)
 			}
 		}
 
-		print_msg("Word was: %s\n", wordlist[word]);
+		cu_stat_setw("Word was: %s\n", wordlist[word]);
 		refresh();
 		getch();
 
