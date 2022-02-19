@@ -1,6 +1,6 @@
 /* cursutil -- useful routines for working with curses
  *
- * Version 1.3
+ * Version 1.4
  *
  * Copyright 2022 Ryan Farley <ryan.farley@gmx.com>
  *
@@ -58,7 +58,10 @@ static int cu_stat_init(enum cu_stat_pos pos)
 }
 
 /* pretty self-explanatory status line macros/functions */
-#define cu_stat_clear() wclear(cu_stat_win)
+#define cu_stat_clear() do { \
+	wmove(cu_stat_win, 0, 0); \
+	wclrtoeol(cu_stat_win); \
+} while (0)
 #define cu_stat_move(y, x) wmove(cu_stat_win, y, x)
 /* printw for status line, but set attributes */
 static void cu_stat_aprintw(int attr, char *fmt, ...)
