@@ -167,7 +167,7 @@ bool input_row(int row, char *dst)
 				if (pos)
 					--pos;
 				continue;
-			case '\n':
+			CASE_ALL_RETURN:
 				if (pos != WORD_LEN) {
 					cu_stat_setw("Word too short");
 					refresh();

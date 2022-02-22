@@ -1,6 +1,6 @@
 /* cursutil -- useful routines for working with curses
  *
- * Version 1.4
+ * Version 1.5
  *
  * Copyright 2022 Ryan Farley <ryan.farley@gmx.com>
  *
@@ -31,7 +31,8 @@
 
 /* Case label for all backspace possibilities */
 #define CASE_ALL_BACKSPACE case KEY_BACKSPACE: case CTRL_('h'): case 127
-
+/* and enter/return */
+#define CASE_ALL_RETURN case KEY_ENTER: case '\n': case '\r'
 /* move and vw_printw */
 static void vw_mvprintw(WINDOW *w, int y, int x,  const char *fmt, va_list args)
 {
