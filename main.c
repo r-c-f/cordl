@@ -326,7 +326,7 @@ int main(int argc, char **argv)
 	keypad(stdscr, true);
 
 	qwerty_win = newwin(7, 21, 8, 25);
-	row_win = newwin(ROW_COUNT * 4, WORD_LEN * 4, 0, 0);
+	row_win = newwin((ROW_COUNT * 4) - 1, WORD_LEN * 4, 0, 0);
 
 	if (has_colors() && !force_mono) {
 		start_color();
