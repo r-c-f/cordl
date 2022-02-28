@@ -42,6 +42,8 @@ int char_stat[CHARSET_LEN];
 char **wordlist;
 size_t wordcount;
 
+WINDOW *qwerty_win, *row_win;
+
 #define PRINT_HELP_BOLD_DESC(bold, desc) do { \
 	cu_stat_aprintw(A_BOLD, "%s", bold); \
 	cu_stat_aprintw(A_NORMAL, ": %s; ", desc); \
@@ -68,20 +70,21 @@ void qwerty_status(void)
 	int color;
 	/* first row */
 	for (i = 0; i < 10; ++i) {
-		attron(cell_attr[char_stat[QWERTY[i] - 'a']]);
-		mvaddch(8, 25 + (i * 2), CHARSET[QWERTY[i] - 'a']);
-		attroff(cell_attr[char_stat[QWERTY[i] - 'a']]);
+		wattron(qwerty_win, cell_attr[char_stat[QWERTY[i] - 'a']]);
+		mvwaddch(qwerty_win, 1, (i * 2) + 1, CHARSET[QWERTY[i] - 'a']);
+		wattroff(qwerty_win, cell_attr[char_stat[QWERTY[i] - 'a']]);
 	}
 	for (i = 10; i < 19; ++i) {
-		attron(cell_attr[char_stat[QWERTY[i] - 'a']]);
-		mvaddch(10, 7 + (i * 2), CHARSET[QWERTY[i] - 'a']);
-		attroff(cell_attr[char_stat[QWERTY[i] - 'a']]);
+		wattron(qwerty_win, cell_attr[char_stat[QWERTY[i] - 'a']]);
+		mvwaddch(qwerty_win, 3, ((i - 10) * 2) + 3, CHARSET[QWERTY[i] - 'a']);
+		wattroff(qwerty_win, cell_attr[char_stat[QWERTY[i] - 'a']]);
 	}
 	for (i = 19; i < CHARSET_LEN; ++i) {
-		attron(cell_attr[char_stat[QWERTY[i] - 'a']]);
-		mvaddch(12, (i * 2) - 9, CHARSET[QWERTY[i] - 'a']);
-		attroff(cell_attr[char_stat[QWERTY[i] - 'a']]);
+		wattron(qwerty_win, cell_attr[char_stat[QWERTY[i] - 'a']]);
+		mvwaddch(qwerty_win, 5, ((i - 19) * 2) + 5, CHARSET[QWERTY[i] - 'a']);
+		wattroff(qwerty_win, cell_attr[char_stat[QWERTY[i] - 'a']]);
 	}
+	wnoutrefresh(qwerty_win);
 }
 
 bool valid_word(char *s)
@@ -97,15 +100,15 @@ bool valid_word(char *s)
 void draw_cell(enum cell_type type, char c, int x, int y)
 {
 	int i, j;
-	attrset(cell_attr[type] & ~A_UNDERLINE);
+	wattrset(row_win, cell_attr[type] & ~A_UNDERLINE);
 	x *= 4;
 	y *= 4;
 	for (i = 0; i < 3; ++i) {
 		for (j = 0; j < 3; ++j) {
 			if (i == 1 && j == 1) {
-				mvaddch(y + j, x + i, c | cell_attr[type]);
+				mvwaddch(row_win, y + j, x + i, c | cell_attr[type]);
 			} else {
-				mvaddch(y + j, x + i, ' ');
+				mvwaddch(row_win, y + j, x + i, ' ');
 			}
 		}
 	}
@@ -115,8 +118,8 @@ void clear_row(int row)
 {
 	int i;
 	for (i = 0; i < 3; ++i) {
-		move((row * 4) + i, 0);
-		clrtoeol();
+		wmove(row_win, (row * 4) + i, 0);
+		wclrtoeol(row_win);
 	}
 }
 void draw_row(int row, char *word, char *txt)
@@ -139,6 +142,7 @@ void draw_row(int row, char *word, char *txt)
 			draw_cell(type, txt[i], i, row);
 		}
 	}
+	wnoutrefresh(row_win);
 }
 
 bool input_row(int row, char *dst)
@@ -146,19 +150,18 @@ bool input_row(int row, char *dst)
 	int c;
 	int pos;
 	draw_row(row, NULL, NULL);
-	qwerty_status();
-	refresh();
 	pos = 0;
-	attron(cell_attr[CELL_BLANK]);
+	wattron(row_win, cell_attr[CELL_BLANK]);
 	while (1) {
+		qwerty_status();
+		refresh();
 		if (pos > WORD_LEN) {
 			pos = 0;
 			memset(dst, 0, WORD_LEN + 1);
 			cu_stat_setw("Word too long");
 			draw_row(row, NULL, NULL);
-			qwerty_status();
-			attron(cell_attr[CELL_BLANK]);
-			refresh();
+			wattron(row_win, cell_attr[CELL_BLANK]);
+			wnoutrefresh(row_win);
 			continue;
 		}
 		c = mvgetch(1 + (row * 4), 1 + (pos * 4));
@@ -170,7 +173,7 @@ bool input_row(int row, char *dst)
 			CASE_ALL_RETURN:
 				if (pos != WORD_LEN) {
 					cu_stat_setw("Word too short");
-					refresh();
+					wnoutrefresh(row_win);
 					continue;
 				} else {
 					if (valid_word(dst)) {
@@ -178,10 +181,9 @@ bool input_row(int row, char *dst)
 					} else {
 						pos = 0;
 						draw_row(row, NULL, NULL);
-						qwerty_status();
-						attron(cell_attr[CELL_BLANK]);
+						wattron(row_win, cell_attr[CELL_BLANK]);
 						cu_stat_setw("'%s' isn't a word", dst);
-						refresh();
+						wnoutrefresh(row_win);
 						continue;
 					}
 				}
@@ -194,12 +196,12 @@ bool input_row(int row, char *dst)
 				if (!islower(c)) {
 					beep();
 					print_help();
-					refresh();
+					wnoutrefresh(row_win);
 					continue;
 				}
 				dst[pos] = c;
-				mvaddch(1 + (row * 4), 1 + (pos++ * 4), c);
-				refresh();
+				mvwaddch(row_win, 1 + (row * 4), 1 + (pos++ * 4), c);
+				wnoutrefresh(row_win);
 		}
 	}
 	return true;
@@ -322,6 +324,9 @@ int main(int argc, char **argv)
 	raw();
 	noecho();
 	keypad(stdscr, true);
+
+	qwerty_win = newwin(7, 21, 8, 25);
+	row_win = newwin(ROW_COUNT * 4, WORD_LEN * 4, 0, 0);
 
 	if (has_colors() && !force_mono) {
 		start_color();
