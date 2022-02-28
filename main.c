@@ -164,7 +164,13 @@ bool input_row(int row, char *dst)
 			wnoutrefresh(row_win);
 			continue;
 		}
-		c = mvgetch(1 + (row * 4), 1 + (pos * 4));
+		if (pos < WORD_LEN) {
+			c = mvwgetch(row_win, 1 + (row * 4), 1 + (pos * 4));
+		} else { 
+			curs_set(0);
+			c = wgetch(row_win);
+			curs_set(1);
+		}
 		switch (c) {
 			CASE_ALL_BACKSPACE:
 				if (pos)
