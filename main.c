@@ -175,6 +175,9 @@ bool input_row(int row, char *dst)
 			CASE_ALL_BACKSPACE:
 				if (pos)
 					--pos;
+				dst[pos] = '\0';
+				mvwaddch(row_win, 1 + (row * 4), 1 + (pos * 4), ' ');
+				wnoutrefresh(row_win);
 				continue;
 			CASE_ALL_RETURN:
 				if (pos != WORD_LEN) {
