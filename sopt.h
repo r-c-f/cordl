@@ -1,6 +1,6 @@
 /* sopt -- simple option parsing
  *
- * Version 1.0
+ * Version 1.1
  *
  * Copyright 2021 Ryan Farley <ryan.farley@gmx.com>
  *
@@ -61,7 +61,7 @@ struct sopt {
  * 		SOPT...(...),
  * 		SOPT...(...),
  * 		...
- * 		SOPT_END
+ * 		SOPT_INIT_END
  * 	};
 */
 /* Define a simple option like -o (takes no parameter) */
