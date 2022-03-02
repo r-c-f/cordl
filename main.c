@@ -151,51 +151,55 @@ bool input_row(int row, char *dst)
 	int pos;
 	draw_row(row, NULL, NULL);
 	pos = 0;
+	memset(dst, 0, WORD_LEN + 1);
 	wattron(row_win, cell_attr[CELL_BLANK]);
 	while (1) {
 		qwerty_status();
 		refresh();
-		if (pos > WORD_LEN) {
-			pos = 0;
-			memset(dst, 0, WORD_LEN + 1);
-			cu_stat_setw("Word too long");
-			draw_row(row, NULL, NULL);
-			wattron(row_win, cell_attr[CELL_BLANK]);
-			wnoutrefresh(row_win);
-			continue;
-		}
 		if (pos < WORD_LEN) {
 			c = mvwgetch(row_win, 1 + (row * 4), 1 + (pos * 4));
-		} else { 
+		} else {
 			curs_set(0);
 			c = wgetch(row_win);
 			curs_set(1);
 		}
+		if (pos > WORD_LEN) {
+			/* only backspace is allowed */
+			switch (c) {
+				CASE_ALL_BACKSPACE:
+					--pos;
+					dst[pos] = '\0';
+					break;
+				default:
+					cu_stat_setw("Word too long");
+					wnoutrefresh(row_win);
+					continue;
+			}
+		}
 		switch (c) {
 			CASE_ALL_BACKSPACE:
-				if (pos)
+				if (pos) {
 					--pos;
+				}
 				dst[pos] = '\0';
 				mvwaddch(row_win, 1 + (row * 4), 1 + (pos * 4), ' ');
 				wnoutrefresh(row_win);
 				continue;
 			CASE_ALL_RETURN:
-				if (pos != WORD_LEN) {
+				if (pos < WORD_LEN) {
 					cu_stat_setw("Word too short");
 					wnoutrefresh(row_win);
 					continue;
-				} else {
-					if (valid_word(dst)) {
-						return true;
-					} else {
-						pos = 0;
-						draw_row(row, NULL, NULL);
-						wattron(row_win, cell_attr[CELL_BLANK]);
-						cu_stat_setw("'%s' isn't a word", dst);
-						wnoutrefresh(row_win);
-						continue;
-					}
 				}
+				if (valid_word(dst)) {
+					return true;
+				}
+				pos = 0;
+				draw_row(row, NULL, NULL);
+				wattron(row_win, cell_attr[CELL_BLANK]);
+				cu_stat_setw("'%s' isn't a word", dst);
+				wnoutrefresh(row_win);
+				continue;
 			case CTRL_('c'):
 				endwin();
 				exit(0);
