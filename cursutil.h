@@ -1,6 +1,6 @@
 /* cursutil -- useful routines for working with curses
  *
- * Version 1.6
+ * Version 1.7
  *
  * Copyright 2022 Ryan Farley <ryan.farley@gmx.com>
  *
@@ -99,28 +99,3 @@ static void cu_stat_setw(char *fmt, ...)
 	wnoutrefresh(cu_stat_win);
 }
 
-/* Set window title */
-static void cu_title_setw(char *str, ...)
-{
-	va_list ap;
-	char *tsl, *fsl, *buf;
-	va_start(ap, str);
-	#ifdef PDCURSES
-	xvasprintf(&buf, str, ap);
-	PDC_set_title(buf);
-	free(buf);
-	#else
-	if (tigetflag("hs")) {
-		tsl = tigetstr("tsl");
-		fsl = tigetstr("fsl");
-		if (tsl && tsl != (char*)-1) {
-			putp(tsl);
-		}
-		vprintf(str, ap);
-		if (fsl && fsl != (char*)-1) {
-			putp(fsl);
-		}
-	}
-	#endif
-	va_end(ap);
-}
