@@ -275,7 +275,7 @@ struct sopt optspec[] = {
 int main(int argc, char **argv)
 {
 	/* sopt things*/
-	int opt, cpos = 0, optind = 0;
+	int opt;
 	char *optarg = NULL;
 
 	char *dictpath = "/usr/share/dict/words";
@@ -292,7 +292,7 @@ int main(int argc, char **argv)
 
 	sopt_usage_set(optspec, argv[0], "wordle-like game for the terminal");
 
-	while ((opt = sopt_getopt(argc, argv, optspec, &cpos, &optind, &optarg)) != -1) {
+	while ((opt = sopt_getopt_s(argc, argv, optspec, NULL, NULL, &optarg)) != -1) {
 		switch (opt) {
 			case 'w':
 				dictpath = optarg;
