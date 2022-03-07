@@ -264,7 +264,7 @@ char **read_all_lines(FILE *f, char *charset)
 }
 
 struct sopt optspec[] = {
-	SOPT_INIT_ARGL('w', "wordlist", "dict", "List of words (one per line) to use as dictionary"),
+	SOPT_INIT_ARGL('w', "wordlist", SOPT_ARGTYPE_STR, "dict", "List of words (one per line) to use as dictionary"),
 	SOPT_INITL('m', "monochrome", "Force monochrome mode"),
 	SOPT_INITL('l', "lowcolor", "Force 8 color mode"),
 	SOPT_INITL('H', "highcolor", "Force 16-color mode"),
@@ -275,8 +275,8 @@ struct sopt optspec[] = {
 int main(int argc, char **argv)
 {
 	/* sopt things*/
-	int opt, cpos = 0, optind = 0;
-	char *optarg = NULL;
+	int opt;
+	union sopt_arg soptarg;
 
 	char *dictpath = "/usr/share/dict/words";
 	FILE *words;
@@ -292,10 +292,10 @@ int main(int argc, char **argv)
 
 	sopt_usage_set(optspec, argv[0], "wordle-like game for the terminal");
 
-	while ((opt = sopt_getopt(argc, argv, optspec, &cpos, &optind, &optarg)) != -1) {
+	while ((opt = sopt_getopt_s(argc, argv, optspec, NULL, NULL, &soptarg)) != -1) {
 		switch (opt) {
 			case 'w':
-				dictpath = optarg;
+				dictpath = soptarg.str;
 				break;
 			case 'l':
 				color_count = 8;
