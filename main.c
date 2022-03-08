@@ -67,7 +67,6 @@ void print_help(void)
 void qwerty_status(void)
 {
 	int i;
-	int color;
 	/* first row */
 	for (i = 0; i < 10; ++i) {
 		wattron(qwerty_win, cell_attr[char_stat[QWERTY[i] - 'a']]);
@@ -280,7 +279,7 @@ int main(int argc, char **argv)
 
 	char *dictpath = "/usr/share/dict/words";
 	FILE *words;
-	int i, row, col;
+	int i;
 	size_t word;
 	char **rows;
 	rnd_pcg_t pcg;
