@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <assert.h>
 #include <ctype.h>
 #include <locale.h>
 #include <stdio.h>
@@ -36,7 +37,11 @@ int color_count = -1;
 #define WORD_LEN 5
 #define CHARSET "abcdefghijklmnopqrstuvwxyz"
 #define QWERTY  "qwertyuiopasdfghjklzxcvbnm"
-#define CHARSET_LEN 26
+#define CHARSET_LEN (sizeof(CHARSET) - 1)
+
+#ifdef static_assert
+static_assert(sizeof(CHARSET) == sizeof(QWERTY), "Character set does not match keyboard layout");
+#endif
 
 int char_stat[CHARSET_LEN];
 char **wordlist;
@@ -66,22 +71,19 @@ void print_help(void)
 
 void qwerty_status(void)
 {
-	int i;
+	int i, ch;
 	/* first row */
 	for (i = 0; i < 10; ++i) {
-		wattron(qwerty_win, cell_attr[char_stat[QWERTY[i] - 'a']]);
-		mvwaddch(qwerty_win, 1, (i * 2) + 1, CHARSET[QWERTY[i] - 'a']);
-		wattroff(qwerty_win, cell_attr[char_stat[QWERTY[i] - 'a']]);
+		ch = cell_attr[char_stat[QWERTY[i] - 'a']] | CHARSET[QWERTY[i] - 'a'];
+		mvwaddch(qwerty_win, 1, (i * 2) + 1, ch);
 	}
 	for (i = 10; i < 19; ++i) {
-		wattron(qwerty_win, cell_attr[char_stat[QWERTY[i] - 'a']]);
-		mvwaddch(qwerty_win, 3, ((i - 10) * 2) + 3, CHARSET[QWERTY[i] - 'a']);
-		wattroff(qwerty_win, cell_attr[char_stat[QWERTY[i] - 'a']]);
+		ch = cell_attr[char_stat[QWERTY[i] - 'a']] | CHARSET[QWERTY[i] - 'a'];
+		mvwaddch(qwerty_win, 3, ((i - 10) * 2) + 3, ch);
 	}
 	for (i = 19; i < CHARSET_LEN; ++i) {
-		wattron(qwerty_win, cell_attr[char_stat[QWERTY[i] - 'a']]);
-		mvwaddch(qwerty_win, 5, ((i - 19) * 2) + 5, CHARSET[QWERTY[i] - 'a']);
-		wattroff(qwerty_win, cell_attr[char_stat[QWERTY[i] - 'a']]);
+		ch = cell_attr[char_stat[QWERTY[i] - 'a']] | CHARSET[QWERTY[i] - 'a'];
+		mvwaddch(qwerty_win, 5, ((i - 19) * 2) + 5, ch);
 	}
 	wnoutrefresh(qwerty_win);
 }
