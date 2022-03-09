@@ -10,6 +10,7 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include <time.h>
+#include "sassert.h"
 #include "xmem.h"
 #include "sopt.h"
 #include "cursutil.h"
@@ -39,9 +40,7 @@ int color_count = -1;
 #define QWERTY  "qwertyuiopasdfghjklzxcvbnm"
 #define CHARSET_LEN (sizeof(CHARSET) - 1)
 
-#ifdef static_assert
 static_assert(sizeof(CHARSET) == sizeof(QWERTY), "Character set does not match keyboard layout");
-#endif
 
 int char_stat[CHARSET_LEN];
 char **wordlist;
