@@ -6,4 +6,4 @@ clean:
 	rm cordl
 
 cordl: ${SRC}
-	${CC} ${CFLAGS} -lcurses main.c -o cordl
+	${CC} ${CFLAGS} main.c -o cordl -lcurses
