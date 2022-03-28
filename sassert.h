@@ -1,6 +1,6 @@
 /* sassert -- static assertion on as many platforms as possible
  *
- * Version 1.0
+ * Version 1.1
  *
  * Copyright 2022 Ryan Farley <ryan.farley@gmx.com>
  *
@@ -24,7 +24,13 @@
  * custom names by only defining it on lesser platforms where needed*/
 #if !defined(static_assert)
 
-#if defined(__GNUC__)
+
+#if defined (__TINYC__)
+	#warning "No native static assertion support; see errors about divide-by-zero for failures"
+	#define static_assert(exp, str) \
+		enum { static_assert_= 1/!!(exp), }
+
+#elif defined(__GNUC__)
 	/* see if we can get away with _Static_assert, which is present for
 	 * all C standards in gcc >= 4.6 */
 	#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
