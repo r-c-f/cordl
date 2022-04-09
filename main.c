@@ -34,6 +34,8 @@ enum cell_type {
 int cell_attr[CELL__COUNT] = {0};
 int color_count = -1;
 
+bool hard_mode = false;
+
 #define ROW_COUNT 6
 #define WORD_LEN 5
 #define CHARSET "abcdefghijklmnopqrstuvwxyz"
@@ -145,15 +147,18 @@ void draw_row(int row, char *word, char *txt)
 	wnoutrefresh(row_win);
 }
 
-bool input_row(int row, char *dst)
+bool input_row(int row, char **rows, char *word)
 {
+	int i;
+	int j;
 	int c;
 	int pos;
 	draw_row(row, NULL, NULL);
 	pos = 0;
-	memset(dst, 0, WORD_LEN + 1);
+	memset(rows[row], 0, WORD_LEN + 1);
 	wattron(row_win, cell_attr[CELL_BLANK]);
 	while (1) {
+input_row_continue:
 		qwerty_status();
 		refresh();
 		if (pos < WORD_LEN) {
@@ -168,7 +173,7 @@ bool input_row(int row, char *dst)
 			switch (c) {
 				CASE_ALL_BACKSPACE:
 					--pos;
-					dst[pos] = '\0';
+					rows[row][pos] = '\0';
 					break;
 				default:
 					cu_stat_setw("Word too long");
@@ -181,7 +186,7 @@ bool input_row(int row, char *dst)
 				if (pos) {
 					--pos;
 				}
-				dst[pos] = '\0';
+				rows[row][pos] = '\0';
 				mvwaddch(row_win, 1 + (row * 4), 1 + (pos * 4), ' ');
 				wnoutrefresh(row_win);
 				continue;
@@ -191,13 +196,32 @@ bool input_row(int row, char *dst)
 					wnoutrefresh(row_win);
 					continue;
 				}
-				if (valid_word(dst)) {
+				if (hard_mode) {
+					for (i = 0; i < row; ++i) {
+						for (j = 0; j < WORD_LEN; ++j) {
+							if (rows[i][j] == rows[row][j]) {
+								if (rows[row][j] != word[j]) { 
+									cu_stat_setw("%c already tried in wrong position", rows[row][j]);
+									wnoutrefresh(row_win);
+									goto input_row_continue;
+								}
+							}
+							if (char_stat[rows[row][j] - 'a'] == CELL_WRONG) {
+								cu_stat_setw("%c already tried", rows[row][j]);
+								wnoutrefresh(row_win);
+								goto input_row_continue;
+							}
+						}
+					}
+				}
+
+				if (valid_word(rows[row])) {
 					return true;
 				}
 				pos = 0;
 				draw_row(row, NULL, NULL);
 				wattron(row_win, cell_attr[CELL_BLANK]);
-				cu_stat_setw("'%s' isn't a word", dst);
+				cu_stat_setw("'%s' isn't a word", rows[row]);
 				wnoutrefresh(row_win);
 				continue;
 			case CTRL_('c'):
@@ -212,7 +236,7 @@ bool input_row(int row, char *dst)
 					wnoutrefresh(row_win);
 					continue;
 				}
-				dst[pos] = c;
+				rows[row][pos] = c;
 				mvwaddch(row_win, 1 + (row * 4), 1 + (pos++ * 4), c);
 				wnoutrefresh(row_win);
 		}
@@ -269,6 +293,7 @@ struct sopt optspec[] = {
 	SOPT_INITL('l', "lowcolor", "Force 8 color mode"),
 	SOPT_INITL('H', "highcolor", "Force 16-color mode"),
 	SOPT_INITL('h', "help", "Help message"),
+	SOPT_INITL('x', "hard", "Hard mode"),
 	SOPT_INIT_END
 };
 
@@ -308,6 +333,9 @@ int main(int argc, char **argv)
 				break;
 			case 'm':
 				force_mono = true;
+				break;
+			case 'x':
+				hard_mode = true;
 				break;
 			default:
 				sopt_usage_s();
@@ -382,7 +410,7 @@ int main(int argc, char **argv)
 		qwerty_status();
 
 		for (i = 0; i < ROW_COUNT; ++i) {
-			if (!input_row(i, rows[i]))
+			if (!input_row(i, rows, wordlist[word]))
 				break;
 			draw_row(i, wordlist[word], rows[i]);
 			qwerty_status();
