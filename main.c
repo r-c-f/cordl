@@ -197,6 +197,15 @@ input_row_continue:
 					continue;
 				}
 				if (hard_mode) {
+					for (i = 0; i < CHARSET_LEN; ++i) {
+						if ((char_stat[i] == CELL_CHAR) || (char_stat[i] == CELL_RIGHT)) {
+							if (!strchr(rows[row], CHARSET[i])) {
+								cu_stat_setw("%c must be used in solution", CHARSET[i]);
+								wnoutrefresh(row_win);
+								goto input_row_continue;
+							}
+						}
+					}
 					for (i = 0; i < row; ++i) {
 						for (j = 0; j < WORD_LEN; ++j) {
 							if (rows[i][j] == rows[row][j]) {
@@ -205,6 +214,10 @@ input_row_continue:
 									wnoutrefresh(row_win);
 									goto input_row_continue;
 								}
+							} else if (rows[i][j] == word[j]) {
+								cu_stat_setw("%c must be used in correct position", rows[i][j]);
+								wnoutrefresh(row_win);
+								goto input_row_continue;
 							}
 							if (char_stat[rows[row][j] - 'a'] == CELL_WRONG) {
 								cu_stat_setw("%c already tried", rows[row][j]);
