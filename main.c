@@ -289,6 +289,7 @@ char **read_all_lines(FILE *f, char *charset)
 
 struct sopt optspec[] = {
 	SOPT_INIT_ARGL('w', "wordlist", SOPT_ARGTYPE_STR, "dict", "List of words (one per line) to use as dictionary"),
+	SOPT_INIT_ARGL('W', "word", SOPT_ARGTYPE_STR, "word", "Set initial word"),
 	SOPT_INITL('m', "monochrome", "Force monochrome mode"),
 	SOPT_INITL('l', "lowcolor", "Force 8 color mode"),
 	SOPT_INITL('H', "highcolor", "Force 16-color mode"),
@@ -307,6 +308,7 @@ int main(int argc, char **argv)
 	FILE *words;
 	int i;
 	size_t word;
+	char *initial_word = NULL;
 	char **rows;
 	rnd_pcg_t pcg;
 	bool force_mono = false;
@@ -336,6 +338,9 @@ int main(int argc, char **argv)
 				break;
 			case 'x':
 				hard_mode = true;
+				break;
+			case 'W':
+				initial_word = xstrdup(soptarg.str);
 				break;
 			default:
 				sopt_usage_s();
@@ -400,12 +405,21 @@ int main(int argc, char **argv)
 	print_help();
 	refresh();
 
-	while (1) {
+	do {
 		for (i = 0; i < CHARSET_LEN; ++i) {
 			char_stat[i] = CELL_BLANK;
 		}
-
-		word = rnd_pcg_range(&pcg, 0, wordcount - 1);
+		if (initial_word) {
+			for (word = 0; word < wordcount; ++word) {
+				if (!strcmp(wordlist[word], initial_word))
+					break;
+			}
+			if (word == wordcount) {
+				break;
+			}
+		} else {
+			word = rnd_pcg_range(&pcg, 0, wordcount - 1);
+		}
 
 		qwerty_status();
 
@@ -426,7 +440,7 @@ int main(int argc, char **argv)
 
 		clear();
 		refresh();
-	}
+	} while (!initial_word); //exits if we have given a word
 	return 0;
 }
 
