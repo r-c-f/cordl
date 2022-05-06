@@ -84,8 +84,8 @@ void game_status(int won)
 		++game_stat[won];
 	}
 
-	for (i = 0; i < (GAMESTAT_LEN - 1); ++i) {
-		mvwprintw(stat_win, i + 1, 1, "  %d  | %d", i + 1, game_stat[i]);
+	for (i = 0; i < GAMESTAT_LEN; ++i) {
+		mvwprintw(stat_win, i, 1, "  %d  | %d", i + 1, game_stat[i]);
 	}
 	mvwprintw(stat_win, GAMESTAT_LEN - 1, 1, "Miss | %d", game_stat[GAMESTAT_LEN - 1]);
 	wnoutrefresh(stat_win);
@@ -347,6 +347,7 @@ int main(int argc, char **argv)
 	char **rows;
 	rnd_pcg_t pcg;
 	bool force_mono = false;
+	bool won;
 
 	if (!(dictpath = getenv("CORDL_WORDS"))) {
 		dictpath = "/usr/share/dict/words";
@@ -440,8 +441,6 @@ int main(int argc, char **argv)
 
 	print_help();
 	wrefresh(stat_win);
-	box(stat_win, 0, 0);
-	wrefresh(stat_win);
 
 	do {
 		for (i = 0; i < CHARSET_LEN; ++i) {
@@ -461,6 +460,7 @@ int main(int argc, char **argv)
 
 		qwerty_status();
 
+		won = false;
 		for (i = 0; i < ROW_COUNT; ++i) {
 			if (!input_row(i, rows, wordlist[word]))
 				break;
@@ -468,12 +468,17 @@ int main(int argc, char **argv)
 			qwerty_status();
 			refresh();
 			if (!strcmp(rows[i], wordlist[word])) {
+				won = true;
 				break;
 			}
 		}
 
 		cu_stat_setw("Word was: %s\n", wordlist[word]);
-		game_status(i);
+		if (won) {
+			game_status(i);
+		} else { 
+			game_status(GAMESTAT_LEN - 1);
+		}
 		refresh();
 		getch();
 
