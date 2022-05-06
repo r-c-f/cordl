@@ -31,6 +31,7 @@ enum cell_type {
 	CELL__COUNT,
 };
 
+
 int cell_attr[CELL__COUNT] = {0};
 int color_count = -1;
 
@@ -44,11 +45,16 @@ bool hard_mode = false;
 
 static_assert(sizeof(CHARSET) == sizeof(QWERTY), "Character set does not match keyboard layout");
 
+
+#define GAMESTAT_LEN (ROW_COUNT + 1)
+int game_stat[GAMESTAT_LEN];
+size_t game_count;
+
 int char_stat[CHARSET_LEN];
 char **wordlist;
 size_t wordcount;
 
-WINDOW *qwerty_win, *row_win;
+WINDOW *qwerty_win, *row_win, *stat_win;
 
 #define PRINT_HELP_BOLD_DESC(bold, desc) do { \
 	cu_stat_aprintw(A_BOLD, "%s", bold); \
@@ -68,6 +74,21 @@ void print_help(void)
 	PRINT_HELP_BOLD_DESC("^C", "quit");
 	PRINT_HELP_BOLD_DESC("^D", "new");
 	refresh();
+}
+
+void game_status(int won)
+{
+	int i;
+
+	if (won >= 0) {
+		++game_stat[won];
+	}
+
+	for (i = 0; i < (GAMESTAT_LEN - 1); ++i) {
+		mvwprintw(stat_win, i + 1, 1, "  %d  | %d", i + 1, game_stat[i]);
+	}
+	mvwprintw(stat_win, GAMESTAT_LEN - 1, 1, "Miss | %d", game_stat[GAMESTAT_LEN - 1]);
+	wnoutrefresh(stat_win);
 }
 
 void qwerty_status(void)
@@ -160,6 +181,7 @@ bool input_row(int row, char **rows, char *word)
 	while (1) {
 input_row_continue:
 		qwerty_status();
+		game_status(-1);
 		refresh();
 		if (pos < WORD_LEN) {
 			c = mvwgetch(row_win, 1 + (row * 4), 1 + (pos * 4));
@@ -384,8 +406,9 @@ int main(int argc, char **argv)
 	noecho();
 	keypad(stdscr, true);
 
-	qwerty_win = newwin(7, 21, 8, 25);
+	qwerty_win = newwin(7, 21, 8, 23);
 	row_win = newwin((ROW_COUNT * 4) - 1, WORD_LEN * 4, 0, 0);
+	stat_win = newwin(GAMESTAT_LEN + 1, 21, 0, 23);
 
 	if (has_colors() && !force_mono) {
 		start_color();
@@ -416,7 +439,9 @@ int main(int argc, char **argv)
 	}
 
 	print_help();
-	refresh();
+	wrefresh(stat_win);
+	box(stat_win, 0, 0);
+	wrefresh(stat_win);
 
 	do {
 		for (i = 0; i < CHARSET_LEN; ++i) {
@@ -448,6 +473,7 @@ int main(int argc, char **argv)
 		}
 
 		cu_stat_setw("Word was: %s\n", wordlist[word]);
+		game_status(i);
 		refresh();
 		getch();
 
