@@ -146,14 +146,6 @@ void clear_row(int row)
 	}
 }
 
-void letter_count(int freq[static 26], char *s)
-{
-	int i;
-	while (*s) {
-		++(freq[*(s++) - 'a']);
-	}
-}
-
 void draw_row(int row, char *word, char *txt)
 {
 	int i;
@@ -161,7 +153,11 @@ void draw_row(int row, char *word, char *txt)
 	int word_letters[26] = {0};
 
 	if (word) {
-		letter_count(word_letters, word);
+		for (i = 0; i < WORD_LEN; ++i) {
+			if (word[i] != txt[i]) {
+				++word_letters[word[i] - 'a'];
+			}
+		}
 	}
 
 	clear_row(row);
