@@ -145,10 +145,25 @@ void clear_row(int row)
 		wclrtoeol(row_win);
 	}
 }
+
+void letter_count(int freq[static 26], char *s)
+{
+	int i;
+	while (*s) {
+		++(freq[*(s++) - 'a']);
+	}
+}
+
 void draw_row(int row, char *word, char *txt)
 {
 	int i;
 	enum cell_type type;
+	int word_letters[26] = {0};
+
+	if (word) {
+		letter_count(word_letters, word);
+	}
+
 	clear_row(row);
 	for (i = 0; i < WORD_LEN; ++i) {
 		if (!word) {
@@ -156,8 +171,10 @@ void draw_row(int row, char *word, char *txt)
 		} else {
 			if (txt[i] == word[i]) {
 				type = CELL_RIGHT;
-			} else if (strchr(word, txt[i])) {
+				--word_letters[txt[i] - 'a'];
+			} else if (word_letters[txt[i] - 'a']) {
 				type = CELL_CHAR;
+				--word_letters[txt[i] - 'a'];
 			} else {
 				type = CELL_WRONG;
 			}
