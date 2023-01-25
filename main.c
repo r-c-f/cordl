@@ -167,7 +167,6 @@ void draw_row(int row, char *word, char *txt)
 		} else {
 			if (txt[i] == word[i]) {
 				type = CELL_RIGHT;
-				--word_letters[txt[i] - 'a'];
 			} else if (word_letters[txt[i] - 'a']) {
 				type = CELL_CHAR;
 				--word_letters[txt[i] - 'a'];
