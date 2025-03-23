@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include <assert.h>
 #include <ctype.h>
+#include <fcntl.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,9 +47,10 @@ bool hard_mode = false;
 static_assert(sizeof(CHARSET) == sizeof(QWERTY), "Character set does not match keyboard layout");
 
 
-#define GAMESTAT_LEN (ROW_COUNT + 1)
-int game_stat[GAMESTAT_LEN];
-size_t game_count;
+#define GAMESTAT_MISS ROW_COUNT /* miss location in gamestat*/
+#define GAMESTAT_SUM (ROW_COUNT + 1) /* Total games played */
+#define GAMESTAT_LEN (GAMESTAT_SUM + 1) /* store miss, and a checksum at the end*/
+size_t game_stat[GAMESTAT_LEN];
 
 int char_stat[CHARSET_LEN];
 char **wordlist;
@@ -76,20 +78,102 @@ void print_help(void)
 	refresh();
 }
 
+
+/* calculate the sum, based on rows and miss. DO NOT STORE */
+size_t sum_game_stat(const size_t gs[static GAMESTAT_LEN])
+{
+	size_t sum = 0, i;
+	for (i = 0; i < GAMESTAT_SUM; ++i) {
+		sum += gs[i];
+	}
+	return sum;
+}
+
+int valid_game_stat(const size_t gs[static GAMESTAT_LEN])
+{
+	return gs[GAMESTAT_SUM] == sum_game_stat(gs);
+}
+
+int open_game_stat(char *path)
+{
+	int fd;
+	if (!path) {
+		if (!getenv("HOME")) {
+			return -1;
+		}
+		xasprintf(&path, "%s/.local/share/cordl_stat", getenv("HOME"));
+	}
+	if ((fd = open(path, O_RDWR | O_CREAT, 0755)) == -1) {
+		free(path);
+		return -1;
+	}
+	if (lockf(fd, F_LOCK, sizeof(game_stat)) == -1) {
+		close(fd);
+		free(path);
+		return -1;
+	}
+	free(path);
+	return fd;
+}
+
+void close_game_stat(int fd)
+{
+	if (fd == -1) {
+		return;
+	}
+
+	lockf(fd, F_ULOCK, sizeof(game_stat));
+	close(fd);
+}
+
+void load_game_stat(int fd)
+{
+	size_t gs_in[GAMESTAT_LEN];
+
+	if (fd == -1) {
+		return;
+	}
+
+	lseek(fd, 0, SEEK_SET);
+	if (read(fd, gs_in, sizeof(gs_in)) == sizeof(gs_in)) {
+		if (valid_game_stat(gs_in)) {
+			memcpy(game_stat, gs_in, sizeof(game_stat));
+		}
+	}
+}
+
+void store_game_stat(int fd)
+{
+	if (fd == -1) {
+		return;
+	}
+
+	lseek(fd, 0, SEEK_SET);
+	write(fd, game_stat, sizeof(game_stat));
+}
+
 void game_status(int won)
 {
-	int i;
+	int i, fd;
+
+	fd = open_game_stat(NULL);
+	load_game_stat(fd);
 
 	if (won >= 0) {
 		++game_stat[won];
 	}
+	game_stat[GAMESTAT_SUM] = sum_game_stat(game_stat);
 
-	for (i = 0; i < GAMESTAT_LEN; ++i) {
-		mvwprintw(stat_win, i, 1, "  %d  | %d", i + 1, game_stat[i]);
+	store_game_stat(fd);
+	close_game_stat(fd);
+
+	for (i = 0; i < ROW_COUNT; ++i) {
+		mvwprintw(stat_win, i, 1, "  %d  | %zu", i + 1, game_stat[i]);
 	}
-	mvwprintw(stat_win, GAMESTAT_LEN - 1, 1, "Miss | %d", game_stat[GAMESTAT_LEN - 1]);
+	mvwprintw(stat_win, GAMESTAT_MISS, 1, "Miss | %zu", game_stat[GAMESTAT_MISS]);
 	wnoutrefresh(stat_win);
 }
+
 
 void qwerty_status(void)
 {
@@ -243,7 +327,7 @@ input_row_continue:
 					for (i = 0; i < row; ++i) {
 						for (j = 0; j < WORD_LEN; ++j) {
 							if (rows[i][j] == rows[row][j]) {
-								if (rows[row][j] != word[j]) { 
+								if (rows[row][j] != word[j]) {
 									cu_stat_setw("%c already tried in wrong position", rows[row][j]);
 									wnoutrefresh(row_win);
 									goto input_row_continue;
@@ -488,8 +572,8 @@ int main(int argc, char **argv)
 		cu_stat_setw("Word was: %s\n", wordlist[word]);
 		if (won) {
 			game_status(i);
-		} else { 
-			game_status(GAMESTAT_LEN - 1);
+		} else {
+			game_status(GAMESTAT_MISS);
 		}
 		refresh();
 		getch();
